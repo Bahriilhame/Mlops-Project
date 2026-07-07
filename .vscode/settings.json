@@ -1,5 +1,9 @@
 {
   "terminal.integrated.env.windows": {
-    "DAGSTER_HOME": "${workspaceFolder}\\.dagster_home"
+    "DAGSTER_HOME": "${workspaceFolder}\\.dagster_home",
+    "DVC_GLOBAL_CONFIG_DIR": "${workspaceFolder}\\.dvc_global",
+    "DVC_SITE_CACHE_DIR": "${workspaceFolder}\\.dvc_site_cache",
+    "DVC_SYSTEM_CONFIG_DIR": "${workspaceFolder}\\.dvc_system",
+    "ITERATIVE_DO_NOT_TRACK": "do-not-track"
   }
 }

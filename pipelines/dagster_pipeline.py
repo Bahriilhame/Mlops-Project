@@ -9,10 +9,10 @@ DAGSTER_HOME = PROJECT_ROOT / ".dagster_home"
 DAGSTER_HOME.mkdir(exist_ok=True)
 os.environ.setdefault("DAGSTER_HOME", str(DAGSTER_HOME))
 
-from dagster import Definitions, asset
+from dagster import Definitions, asset  # noqa: E402
 
-from dlt_pipeline.load_student_data import run_pipeline
-from src.student_score_mlops.train import train
+from dlt_pipeline.load_student_data import run_pipeline  # noqa: E402
+from src.student_score_mlops.train import train  # noqa: E402
 
 
 @asset

@@ -8,7 +8,6 @@ from src.student_score_mlops.monitoring import log_prediction
 from src.student_score_mlops.predict import load_model, predict_score
 from src.student_score_mlops.schemas import PredictionResponse, StudentFeatures
 
-
 app = FastAPI(title="EduScore MLOps API", version="0.1.0")
 model = None
 

@@ -1,41 +1,339 @@
 # EduScore MLOps
 
-MLOps and DataOps project for predicting a student's final performance score from study behavior.
+EduScore is an end-to-end MLOps and DataOps project that predicts a student's final score from academic behavior signals. The project demonstrates data ingestion, local warehousing, transformation, validation, model training, experiment tracking, API serving, monitoring, orchestration, Docker packaging, CI, and DVC-based data versioning.
 
 Dataset: [Student Performance Dataset on Kaggle](https://www.kaggle.com/datasets/nabeelqureshitiii/student-performance-dataset)
 
-## Problem
+## What The Project Predicts
 
-Educational teams need an early signal that estimates a student's final score from simple academic behavior indicators:
+Input features:
 
-- Average weekly self-study hours
-- Attendance percentage
-- Class participation
+- `study_hours`
+- `attendance_percentage`
+- `class_participation`
 
-The ML service predicts:
+Outputs:
 
-- `total_score`: numerical score from 0 to 100
-- `grade`: derived class using A/B/C/D/F thresholds
+- `total_score`: predicted numeric score from 0 to 100
+- `grade`: derived A/B/C/D/F label
 
 ## Architecture
 
 ```mermaid
 flowchart TD
-    A["Kaggle CSV"] --> B["dlt ingestion"]
-    B --> C["DuckDB raw tables"]
-    C --> D["dbt cleaning"]
-    D --> E["Data quality tests"]
-    E --> F["ML training"]
-    F --> G["MLflow tracking"]
-    G --> H["FastAPI service"]
-    H --> I["Monitoring logs"]
+    A["Kaggle CSV"] --> B["DVC raw data versioning"]
+    B --> C["dlt ingestion"]
+    C --> D["DuckDB raw tables"]
+    D --> E["dbt transformations"]
+    E --> F["dbt and pytest quality checks"]
+    F --> G["ML training"]
+    G --> H["MLflow tracking"]
+    H --> I["FastAPI service"]
+    I --> J["Prediction monitoring log"]
+    C --> K["Dagster assets"]
+    E --> K
+    G --> K
 ```
+
+## Repository Map
+
+| Path | Purpose |
+| --- | --- |
+| `api/` | FastAPI application and prediction endpoint |
+| `data/raw/student_performance.csv.dvc` | DVC pointer for the raw CSV |
+| `dbt/student_score/` | dbt project for DuckDB transformations and tests |
+| `dlt_pipeline/load_student_data.py` | dlt ingestion into DuckDB |
+| `docs/` | project vision, agile notes, and data contract |
+| `monitoring/` | prediction log schema; generated logs are ignored |
+| `pipelines/dagster_pipeline.py` | Dagster asset graph for the pipeline |
+| `scripts/` | Windows helpers for Dagster and DVC |
+| `src/student_score_mlops/` | config, data utilities, training, prediction, monitoring |
+| `tests/` | pytest suite |
+| `.github/workflows/ci.yml` | GitHub Actions lint/test/Docker build workflow |
+
+## Prerequisites
+
+- Python 3.12
+- Git
+- Docker Desktop, only if you want to build/run containers
+- Google account with access to the project's DVC Google Drive folder
+- On Windows, PowerShell or Command Prompt
+
+The Python dependencies are pinned in `requirements.txt`, including `dvc-gdrive` for Google Drive remotes.
+
+## First-Time Setup
+
+Clone the repository and enter it:
+
+```bash
+git clone <repo-url>
+cd eduscore-mlops
+```
+
+Create and activate a virtual environment.
+
+Windows PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+macOS/Linux:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+Optional: inspect the example environment file if you want to override paths. The Python code reads environment variables from the shell; it does not automatically load `.env`.
+
+```bash
+cat .env.example
+```
+
+Windows:
+
+```powershell
+Get-Content .env.example
+```
+
+## Restore The Data
+
+The raw CSV is not committed to Git. It is tracked by DVC through:
+
+```text
+data/raw/student_performance.csv.dvc
+```
+
+Restore it from the shared Google Drive DVC remote:
+
+```bash
+dvc pull
+```
+
+On Windows, prefer the project wrapper because it keeps DVC temporary/cache paths inside the workspace:
+
+```powershell
+scripts\dvc.cmd pull
+```
+
+The first `pull` opens a browser for Google authentication. If you cannot authenticate, see `scripts/download_data.md`.
+
+Manual fallback:
+
+1. Download the dataset from Kaggle.
+2. Rename the CSV to `student_performance.csv`.
+3. Put it at `data/raw/student_performance.csv`.
+
+## Google Drive DVC Setup
+
+The shared DVC remote is configured in `.dvc/config`. It points to a Google Drive folder using a `gdrive://...` URL.
+
+To configure or replace the shared folder:
+
+```powershell
+scripts\setup_gdrive_remote.cmd <google-drive-folder-id>
+```
+
+To upload locally tracked data:
+
+```powershell
+scripts\dvc.cmd push
+```
+
+If Google blocks the default DVC OAuth app, create your own Google Cloud OAuth Desktop client, enable the Google Drive API, and run:
+
+```powershell
+scripts\setup_gdrive_oauth.cmd <google-drive-folder-id> <client-id> <client-secret>
+scripts\dvc.cmd push
+```
+
+If Google says the app is in testing and returns `Error 403: access_denied`, add your Google account under Google Cloud Console > Google Auth Platform > Audience > Test users, then retry.
+
+OAuth client credentials are stored in `.dvc/config.local`. That file is intentionally ignored and must not be committed.
+
+## Run The Full Local Pipeline
+
+Run these commands from the repository root:
+
+```bash
+python dlt_pipeline/load_student_data.py
+dbt run --project-dir dbt/student_score --profiles-dir dbt/student_score
+dbt test --project-dir dbt/student_score --profiles-dir dbt/student_score
+python -m src.student_score_mlops.train
+```
+
+This creates generated local artifacts:
+
+- `data/student_score.duckdb`
+- `models/student_score_model.joblib`
+- `models/metrics.json`
+- `mlruns/`
+
+These are ignored by Git because collaborators can reproduce them.
+
+## Run With Dagster
+
+Start Dagster:
+
+```powershell
+scripts\dagster_dev.cmd
+```
+
+Open the Dagster UI shown in the terminal and materialize the EduScore assets. The Dagster helper sets local home/cache paths so temporary Dagster and dlt folders stay out of the repository root.
+
+## Run The API
+
+Train the model first so `models/student_score_model.joblib` exists.
+
+```bash
+uvicorn api.main:app --host 0.0.0.0 --port 8000
+```
+
+Health check:
+
+```bash
+curl http://localhost:8000/health
+```
+
+Prediction example:
+
+```bash
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{"study_hours": 12, "attendance_percentage": 88, "class_participation": 7}'
+```
+
+Main endpoints:
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| `GET` | `/health` | Service health check |
+| `POST` | `/predict` | Predict final score and grade |
+
+Each prediction is appended to `monitoring/predictions.jsonl`.
+
+## Docker
+
+Build and run the API:
+
+```bash
+docker compose up --build api
+```
+
+Run API and MLflow together:
+
+```bash
+docker compose up --build
+```
+
+Services:
+
+- API: <http://localhost:8000>
+- MLflow UI: <http://localhost:5000>
+
+The API container mounts local `models/` and `monitoring/`. Run training before starting the API container, otherwise the model file will be missing.
+
+## MLflow
+
+Training logs model parameters, metrics, and artifacts to the local MLflow tracking directory:
+
+```text
+mlruns/
+```
+
+To inspect experiments:
+
+```bash
+mlflow ui --backend-store-uri mlruns --host 0.0.0.0 --port 5000
+```
+
+## Quality Checks
+
+Run these before pushing:
+
+```bash
+ruff check .
+pytest -q
+dbt test --project-dir dbt/student_score --profiles-dir dbt/student_score
+dvc status
+```
+
+Windows DVC command:
+
+```powershell
+scripts\dvc.cmd status
+```
+
+The GitHub Actions workflow currently runs:
+
+- `ruff check .`
+- `pytest -q`
+- `docker build -t eduscore-mlops:ci .`
+
+## Updating The Dataset
+
+After replacing or editing `data/raw/student_performance.csv`:
+
+```powershell
+scripts\dvc.cmd add data\raw\student_performance.csv
+scripts\dvc.cmd push
+git add data/raw/student_performance.csv.dvc .dvc/config
+```
+
+Commit the `.dvc` pointer and DVC config, not the raw CSV.
+
+## What To Commit
+
+Commit:
+
+- source code, tests, docs, Docker files, dbt files, Dagster files
+- `.dvc/config`
+- `.dvc/.gitignore`
+- `.dvcignore`
+- `.dockerignore`
+- `data/raw/student_performance.csv.dvc`
+- helper scripts in `scripts/`
+
+Do not commit:
+
+- `.dvc/config.local`
+- `.venv/`
+- `data/raw/*.csv`
+- `data/*.duckdb`
+- `models/*.joblib`
+- `models/*.json`
+- `mlruns/`
+- `monitoring/*.jsonl`
+- `.dagster_home/`, `.dlt_home/`, `.dlt_data/`, cache folders
+
+## Troubleshooting
+
+`ModuleNotFoundError: No module named 'pkg_resources'` when importing MLflow:
+Run `pip install -r requirements.txt`. The project pins `setuptools<81` because this MLflow version still imports `pkg_resources`.
+
+Google says "This app is blocked":
+Use a custom Google Cloud OAuth Desktop client and configure it with `scripts\setup_gdrive_oauth.cmd`.
+
+Google says `Error 403: access_denied` and the app is in testing:
+Add your Google account as a test user in the Google Cloud OAuth consent screen.
+
+DVC tries to write outside the workspace on Windows:
+Use `scripts\dvc.cmd` or `scripts\dvc.ps1` instead of plain `dvc`.
+
+API fails because the model file is missing:
+Run the full local pipeline or at least `python -m src.student_score_mlops.train`.
 
 ## Course Requirements Mapping
 
 | Requirement | Implementation |
 | --- | --- |
-| Data Strategy | `docs/vision.md` |
+| Data Strategy | `docs/vision.md`, DVC-tracked raw dataset |
 | Agile | `docs/agile.md` |
 | dlt | `dlt_pipeline/load_student_data.py` |
 | DuckDB | local `data/student_score.duckdb` |
@@ -49,70 +347,14 @@ flowchart TD
 | CI/CD | `.github/workflows/ci.yml` |
 | Monitoring | `monitoring/prediction_log_schema.json`, `src/student_score_mlops/monitoring.py` |
 
-## Quick Start
+## GitHub Readiness Checklist
 
-1. Create a virtual environment.
+Before pushing to GitHub:
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
+1. Run `scripts\dvc.cmd push` so collaborators can restore the raw data.
+2. Run `ruff check .` and `pytest -q`.
+3. Run `scripts\dvc.cmd status`.
+4. Confirm `.dvc/config.local` is ignored and not staged.
+5. Stage the DVC pointer file, DVC config, README, scripts, and code changes.
 
-2. Download the Kaggle dataset and place the CSV here:
-
-```text
-data/raw/student_performance.csv
-```
-
-3. Run the local pipeline.
-
-```bash
-python dlt_pipeline/load_student_data.py
-dbt run --project-dir dbt/student_score --profiles-dir dbt/student_score
-dbt test --project-dir dbt/student_score --profiles-dir dbt/student_score
-python -m src.student_score_mlops.train
-```
-
-For a quick smoke test before downloading the full dataset:
-
-```bash
-RAW_DATA_PATH=data/sample/student_performance_sample.csv python -m src.student_score_mlops.train
-```
-
-4. Start the API.
-
-```bash
-uvicorn api.main:app --host 0.0.0.0 --port 8000
-```
-
-5. Test prediction.
-
-```bash
-curl -X POST http://localhost:8000/predict \
-  -H "Content-Type: application/json" \
-  -d '{"study_hours": 12, "attendance_percentage": 88, "class_participation": 7}'
-```
-
-## Main Endpoints
-
-| Method | Endpoint | Description |
-| --- | --- | --- |
-| `GET` | `/health` | Service health check |
-| `POST` | `/predict` | Predict final score and grade |
-
-## Model
-
-Default model: `RandomForestRegressor`
-
-Metrics:
-
-- MAE
-- RMSE
-- R2
-
-MLflow logs parameters, metrics, and the trained model artifact.
-
-## Notes
-
-The dataset is simple, so the value of this project is not only the model accuracy. The real objective is to demonstrate an industrial lifecycle: ingestion, validation, transformation, training, tracking, deployment, monitoring, and CI/CD.
+If those checks pass, the project is ready to push. The raw data and generated artifacts should stay out of Git.

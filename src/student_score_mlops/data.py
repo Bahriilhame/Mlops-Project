@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 COLUMN_ALIASES = {
     "study_hours": [
         "average_weekly_self_study_hours",
