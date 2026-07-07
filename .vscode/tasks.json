@@ -1,0 +1,22 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Dagster: dev",
+      "type": "shell",
+      "command": "${workspaceFolder}\\.venv\\Scripts\\dagster.exe",
+      "args": [
+        "dev",
+        "-f",
+        "${workspaceFolder}\\pipelines\\dagster_pipeline.py"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "DAGSTER_HOME": "${workspaceFolder}\\.dagster_home"
+        }
+      },
+      "problemMatcher": []
+    }
+  ]
+}

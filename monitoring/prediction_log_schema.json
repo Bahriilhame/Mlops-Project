@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "required": ["timestamp", "features", "predicted_score", "predicted_grade", "latency_ms"],
+  "properties": {
+    "timestamp": {"type": "number"},
+    "features": {
+      "type": "object",
+      "required": ["study_hours", "attendance_percentage", "class_participation"]
+    },
+    "predicted_score": {"type": "number", "minimum": 0, "maximum": 100},
+    "predicted_grade": {"type": "string", "enum": ["A", "B", "C", "D", "F"]},
+    "latency_ms": {"type": "number", "minimum": 0}
+  }
+}

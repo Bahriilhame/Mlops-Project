@@ -1,0 +1,7 @@
+student_score:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: data/student_score.duckdb
+      threads: 4

@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.dagster_home/
+.dlt_home/
+.dlt_data/
+mlruns/
+data/raw/*.csv
+data/*.duckdb
+models/*.joblib
+models/*.json
+monitoring/*.jsonl
+dbt/student_score/target/
+dbt/student_score/dbt_packages/
+dbt/student_score/logs/

@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: stg_student_performance
+    description: Standardized student performance records.
+    columns:
+      - name: study_hours
+        data_tests:
+          - not_null
+      - name: attendance_percentage
+        data_tests:
+          - not_null
+      - name: class_participation
+        data_tests:
+          - not_null
+      - name: total_score
+        data_tests:
+          - not_null
+      - name: grade
+        data_tests:
+          - accepted_values:
+              values: ["A", "B", "C", "D", "F"]
+
+  - name: ml_student_training_set
+    description: Clean table used for model training.
+    columns:
+      - name: total_score
+        data_tests:
+          - not_null
+      - name: derived_grade
+        data_tests:
+          - accepted_values:
+              values: ["A", "B", "C", "D", "F"]

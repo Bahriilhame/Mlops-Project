@@ -1,0 +1,5 @@
+{
+  "terminal.integrated.env.windows": {
+    "DAGSTER_HOME": "${workspaceFolder}\\.dagster_home"
+  }
+}
