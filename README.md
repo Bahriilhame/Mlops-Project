@@ -50,6 +50,7 @@ flowchart TD
 | `src/student_score_mlops/` | config, data utilities, training, prediction, monitoring |
 | `tests/` | pytest suite |
 | `.github/workflows/ci.yml` | GitHub Actions lint/test/Docker build workflow |
+| `.github/workflows/dataops-mlops.yml` | automated DVC, dlt, dbt, test, and training workflow |
 
 ## Prerequisites
 
@@ -177,6 +178,38 @@ This creates generated local artifacts:
 
 These are ignored by Git because collaborators can reproduce them.
 
+## Automated DataOps And MLOps Pipeline
+
+The repository also includes an automated GitHub Actions workflow:
+
+```text
+.github/workflows/dataops-mlops.yml
+```
+
+It runs on `git push` when these paths change:
+
+- `data/raw/*.dvc`
+- `dlt_pipeline/**`
+- `dbt/**`
+- `src/**`
+- `requirements.txt`
+
+The automated flow is:
+
+```text
+new CSV -> dvc add -> dvc push -> git commit .dvc file -> git push -> GitHub Actions retrains model
+```
+
+The workflow pulls the dataset from Google Drive with DVC, runs dlt ingestion, runs `dbt run`, runs `dbt test`, runs `pytest`, trains the model, and uploads the trained model, metrics, and MLflow outputs as GitHub Actions artifacts.
+
+For CI, configure a Google service account and add the base64-encoded JSON key as a GitHub repository secret:
+
+```text
+DVC_GDRIVE_SERVICE_ACCOUNT_JSON_B64
+```
+
+Share the Google Drive DVC folder with the service account email. See `docs/automation.md` for the full automation guide.
+
 ## Run With Dagster
 
 Start Dagster:
@@ -276,6 +309,15 @@ The GitHub Actions workflow currently runs:
 - `pytest -q`
 - `docker build -t eduscore-mlops:ci .`
 
+The DataOps and MLOps automation workflow runs:
+
+- `dvc pull`
+- `python dlt_pipeline/load_student_data.py`
+- `dbt run --project-dir dbt/student_score --profiles-dir dbt/student_score`
+- `dbt test --project-dir dbt/student_score --profiles-dir dbt/student_score`
+- `pytest -q`
+- `python -m src.student_score_mlops.train`
+
 ## Updating The Dataset
 
 After replacing or editing `data/raw/student_performance.csv`:
@@ -283,10 +325,12 @@ After replacing or editing `data/raw/student_performance.csv`:
 ```powershell
 scripts\dvc.cmd add data\raw\student_performance.csv
 scripts\dvc.cmd push
-git add data/raw/student_performance.csv.dvc .dvc/config
+git add data/raw/student_performance.csv.dvc
+git commit -m "Update student performance dataset"
+git push
 ```
 
-Commit the `.dvc` pointer and DVC config, not the raw CSV.
+Commit the `.dvc` pointer, not the raw CSV. The GitHub Actions automation sees the changed `.dvc` metadata file, pulls the matching dataset from Google Drive, and retrains the model.
 
 ## What To Commit
 
@@ -344,7 +388,7 @@ Run the full local pipeline or at least `python -m src.student_score_mlops.train
 | MLflow | experiment tracking in training script |
 | FastAPI | `api/main.py` |
 | Docker | `Dockerfile`, `docker-compose.yml` |
-| CI/CD | `.github/workflows/ci.yml` |
+| CI/CD | `.github/workflows/ci.yml`, `.github/workflows/dataops-mlops.yml` |
 | Monitoring | `monitoring/prediction_log_schema.json`, `src/student_score_mlops/monitoring.py` |
 
 ## GitHub Readiness Checklist
@@ -354,7 +398,8 @@ Before pushing to GitHub:
 1. Run `scripts\dvc.cmd push` so collaborators can restore the raw data.
 2. Run `ruff check .` and `pytest -q`.
 3. Run `scripts\dvc.cmd status`.
-4. Confirm `.dvc/config.local` is ignored and not staged.
-5. Stage the DVC pointer file, DVC config, README, scripts, and code changes.
+4. Add `DVC_GDRIVE_SERVICE_ACCOUNT_JSON_B64` in GitHub repository secrets before relying on automated retraining.
+5. Confirm `.dvc/config.local` is ignored and not staged.
+6. Stage the DVC pointer file, DVC config, README, scripts, and code changes.
 
 If those checks pass, the project is ready to push. The raw data and generated artifacts should stay out of Git.

@@ -10,6 +10,7 @@ __pycache__/
 .dlt_data/
 mlruns/
 data/raw/*.csv
+!data/raw/*.csv.dvc
 data/*.duckdb
 models/*.joblib
 models/*.json
