@@ -15,6 +15,7 @@ data/*.duckdb
 models/*.joblib
 models/*.json
 monitoring/*.jsonl
+metadata/*.json
 dbt/student_score/target/
 dbt/student_score/dbt_packages/
 dbt/student_score/logs/

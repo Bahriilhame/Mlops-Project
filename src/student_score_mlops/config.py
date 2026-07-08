@@ -26,6 +26,17 @@ class Settings:
     prediction_log_path: Path = PROJECT_ROOT / os.getenv(
         "PREDICTION_LOG_PATH", "monitoring/predictions.jsonl"
     )
+    data_fingerprint_path: Path = PROJECT_ROOT / os.getenv(
+        "DATA_FINGERPRINT_PATH", "metadata/data_fingerprint.json"
+    )
+    training_reference_path: Path = PROJECT_ROOT / os.getenv(
+        "TRAINING_REFERENCE_PATH", "models/training_reference.json"
+    )
+    mlflow_registered_model_name: str = os.getenv(
+        "MLFLOW_REGISTERED_MODEL_NAME", "EduScoreStudentPerformanceModel"
+    )
+    min_r2: float = float(os.getenv("MIN_R2", "0.70"))
+    max_rmse: float = float(os.getenv("MAX_RMSE", "15.0"))
 
 
 settings = Settings()

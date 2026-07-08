@@ -26,13 +26,16 @@ flowchart TD
     C --> D["DuckDB raw tables"]
     D --> E["dbt transformations"]
     E --> F["dbt and pytest quality checks"]
-    F --> G["ML training"]
-    G --> H["MLflow tracking"]
-    H --> I["FastAPI service"]
-    I --> J["Prediction monitoring log"]
-    C --> K["Dagster assets"]
-    E --> K
-    G --> K
+    F --> G["Dataset fingerprint"]
+    G --> H{"Data changed or force_train?"}
+    H -->|yes| I["Train, evaluate, register candidate"]
+    H -->|no| J["Skip retraining"]
+    I --> K["MLflow tracking and registry"]
+    K --> L["FastAPI service"]
+    L --> M["Prediction monitoring log"]
+    C --> N["Dagster daily schedule/assets"]
+    E --> N
+    I --> N
 ```
 
 ## Repository Map
@@ -50,7 +53,7 @@ flowchart TD
 | `src/student_score_mlops/` | config, data utilities, training, prediction, monitoring |
 | `tests/` | pytest suite |
 | `.github/workflows/ci.yml` | GitHub Actions lint/test/Docker build workflow |
-| `.github/workflows/dataops-mlops.yml` | automated DVC, dlt, dbt, test, and training workflow |
+| `docs/production_architecture.md` | production-oriented orchestration and deployment notes |
 
 ## Prerequisites
 
@@ -178,37 +181,34 @@ This creates generated local artifacts:
 
 These are ignored by Git because collaborators can reproduce them.
 
-## Automated DataOps And MLOps Pipeline
+## Production-Style Automation
 
-The repository also includes an automated GitHub Actions workflow:
+Dagster is the production-oriented orchestration layer. It runs the full DataOps and MLOps graph and decides whether to retrain based on a deterministic dataset fingerprint.
 
-```text
-.github/workflows/dataops-mlops.yml
-```
-
-It runs on `git push` when these paths change:
-
-- `data/raw/*.dvc`
-- `dlt_pipeline/**`
-- `dbt/**`
-- `src/**`
-- `requirements.txt`
-
-The automated flow is:
+The production-style flow is:
 
 ```text
-new CSV -> dvc add -> dvc push -> git commit .dvc file -> git push -> GitHub Actions retrains model
+Dagster schedule/materialization
+-> check raw data freshness
+-> dlt ingest
+-> dbt run
+-> dbt test
+-> pytest/schema checks
+-> compute dataset fingerprint
+-> train only if data changed or force_train=true
+-> evaluate and log to MLflow
+-> register model candidate if thresholds pass
 ```
 
-The workflow pulls the dataset from Google Drive with DVC, runs dlt ingestion, runs `dbt run`, runs `dbt test`, runs `pytest`, trains the model, and uploads the trained model, metrics, and MLflow outputs as GitHub Actions artifacts.
-
-For CI, configure a Google service account and add the base64-encoded JSON key as a GitHub repository secret:
+The fingerprint metadata is stored locally in:
 
 ```text
-DVC_GDRIVE_SERVICE_ACCOUNT_JSON_B64
+metadata/data_fingerprint.json
 ```
 
-Share the Google Drive DVC folder with the service account email. See `docs/automation.md` for the full automation guide.
+That file is generated state and is ignored by Git. See `docs/production_architecture.md` for the complete architecture.
+
+GitHub Actions remains code CI. It is not the main retraining orchestrator.
 
 ## Run With Dagster
 
@@ -219,6 +219,17 @@ scripts\dagster_dev.cmd
 ```
 
 Open the Dagster UI shown in the terminal and materialize the EduScore assets. The Dagster helper sets local home/cache paths so temporary Dagster and dlt folders stay out of the repository root.
+
+The daily schedule is named `daily_student_score_pipeline`. It runs at 02:00 Africa/Casablanca time when schedules are enabled in Dagster.
+
+To force retraining even when the dataset fingerprint is unchanged, set this Dagster run config:
+
+```yaml
+ops:
+  train_student_score_model:
+    config:
+      force_train: true
+```
 
 ## Run The API
 
@@ -247,6 +258,7 @@ Main endpoints:
 | Method | Endpoint | Description |
 | --- | --- | --- |
 | `GET` | `/health` | Service health check |
+| `GET` | `/model-info` | Loaded model path, metrics, dataset fingerprint, load timestamp |
 | `POST` | `/predict` | Predict final score and grade |
 
 Each prediction is appended to `monitoring/predictions.jsonl`.
@@ -286,6 +298,10 @@ To inspect experiments:
 mlflow ui --backend-store-uri mlruns --host 0.0.0.0 --port 5000
 ```
 
+Training also logs the dataset fingerprint, dataset row count, training timestamp, and model quality gate result. If `r2 >= MIN_R2` and `rmse <= MAX_RMSE`, the run registers a model candidate named `EduScoreStudentPerformanceModel`.
+
+Registration is not deployment. Promoting a registered model to production should require an explicit approval or separate deployment step.
+
 ## Quality Checks
 
 Run these before pushing:
@@ -309,14 +325,14 @@ The GitHub Actions workflow currently runs:
 - `pytest -q`
 - `docker build -t eduscore-mlops:ci .`
 
-The DataOps and MLOps automation workflow runs:
+The Dagster production-style pipeline runs:
 
-- `dvc pull`
 - `python dlt_pipeline/load_student_data.py`
 - `dbt run --project-dir dbt/student_score --profiles-dir dbt/student_score`
 - `dbt test --project-dir dbt/student_score --profiles-dir dbt/student_score`
 - `pytest -q`
-- `python -m src.student_score_mlops.train`
+- dataset fingerprinting
+- conditional training and MLflow registration
 
 ## Updating The Dataset
 
@@ -330,7 +346,7 @@ git commit -m "Update student performance dataset"
 git push
 ```
 
-Commit the `.dvc` pointer, not the raw CSV. The GitHub Actions automation sees the changed `.dvc` metadata file, pulls the matching dataset from Google Drive, and retrains the model.
+Commit the `.dvc` pointer, not the raw CSV. DVC preserves the exact dataset version. Dagster is responsible for scheduled/materialized pipeline runs and conditional retraining.
 
 ## What To Commit
 
@@ -352,6 +368,7 @@ Do not commit:
 - `data/*.duckdb`
 - `models/*.joblib`
 - `models/*.json`
+- `metadata/*.json`
 - `mlruns/`
 - `monitoring/*.jsonl`
 - `.dagster_home/`, `.dlt_home/`, `.dlt_data/`, cache folders
@@ -388,7 +405,7 @@ Run the full local pipeline or at least `python -m src.student_score_mlops.train
 | MLflow | experiment tracking in training script |
 | FastAPI | `api/main.py` |
 | Docker | `Dockerfile`, `docker-compose.yml` |
-| CI/CD | `.github/workflows/ci.yml`, `.github/workflows/dataops-mlops.yml` |
+| CI/CD | `.github/workflows/ci.yml` |
 | Monitoring | `monitoring/prediction_log_schema.json`, `src/student_score_mlops/monitoring.py` |
 
 ## GitHub Readiness Checklist
@@ -398,8 +415,7 @@ Before pushing to GitHub:
 1. Run `scripts\dvc.cmd push` so collaborators can restore the raw data.
 2. Run `ruff check .` and `pytest -q`.
 3. Run `scripts\dvc.cmd status`.
-4. Add `DVC_GDRIVE_SERVICE_ACCOUNT_JSON_B64` in GitHub repository secrets before relying on automated retraining.
-5. Confirm `.dvc/config.local` is ignored and not staged.
-6. Stage the DVC pointer file, DVC config, README, scripts, and code changes.
+4. Confirm `.dvc/config.local` is ignored and not staged.
+5. Stage the DVC pointer file, DVC config, README, scripts, and code changes.
 
 If those checks pass, the project is ready to push. The raw data and generated artifacts should stay out of Git.
