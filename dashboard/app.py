@@ -1,8 +1,9 @@
-import streamlit as st
-import pandas as pd
 import json
 from pathlib import Path
+
 import altair as alt
+import pandas as pd
+import streamlit as st
 
 st.set_page_config(page_title="EduScore MLOps Dashboard", layout="wide")
 
