@@ -49,3 +49,7 @@ mlruns/
 
 # Temporary files
 tmpeu8smvia/
+
+
+# Google OAuth credentials
+client_secrets.json
