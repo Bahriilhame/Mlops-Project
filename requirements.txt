@@ -5,3 +5,6 @@ dbt-duckdb
 dagster
 dagster-webserver
 pytest
+numpy 
+scikit-learn
+joblib
