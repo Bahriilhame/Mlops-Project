@@ -1,0 +1,29 @@
+version: 2
+
+models:
+
+  - name: stg_student_info
+
+    columns:
+
+      - name: id_student
+        tests:
+          - not_null
+
+      - name: code_module
+        tests:
+          - not_null
+
+      - name: code_presentation
+        tests:
+          - not_null
+
+      - name: gender
+        tests:
+          - accepted_values:
+              values: ["M", "F"]
+
+      - name: disability
+        tests:
+          - accepted_values:
+              values: ["Y", "N"]

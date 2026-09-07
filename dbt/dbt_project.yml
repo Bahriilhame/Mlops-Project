@@ -1,0 +1,21 @@
+name: "educluster"
+
+version: "1.0.0"
+
+config-version: 2
+
+profile: "educluster"
+
+model-paths: ["models"]
+test-paths: ["tests"]
+
+models:
+  educluster:
+    staging:
+      +materialized: view
+
+    intermediate:
+      +materialized: view
+
+    marts:
+      +materialized: table

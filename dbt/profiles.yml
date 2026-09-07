@@ -1,0 +1,9 @@
+educluster:
+  target: dev
+
+  outputs:
+    dev:
+      type: duckdb
+      path: "C:/Users/m/Desktop/Master IA ben msik/S2/MLOps/Projet/oulad_pipeline.duckdb"
+      schema: main
+      threads: 1

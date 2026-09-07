@@ -1,0 +1,22 @@
+version: 2
+
+sources:
+
+  - name: raw
+    schema: raw
+
+    tables:
+
+      - name: student_info
+
+      - name: student_assessment
+
+      - name: student_vle
+
+      - name: student_registration
+
+      - name: assessments
+
+      - name: courses
+
+      - name: vle

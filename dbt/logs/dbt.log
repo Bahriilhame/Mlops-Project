@@ -1,0 +1,40 @@
+[0m15:18:09.958694 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000026C2914D070>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000026C2914CD10>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000026C2914F830>]}
+
+
+============================== 15:18:09.963967 | a593d752-b0e8-4362-83d4-c6b7b9f6f4c8 ==============================
+[0m15:18:09.963967 [info ] [MainThread]: Running with dbt=1.8.4
+[0m15:18:09.964967 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'write_json': 'True', 'log_cache_events': 'False', 'partial_parse': 'True', 'cache_selected_only': 'False', 'warn_error': 'None', 'fail_fast': 'False', 'debug': 'False', 'log_path': 'logs', 'version_check': 'True', 'profiles_dir': 'C:\\Users\\m\\.dbt', 'use_colors': 'True', 'use_experimental_parser': 'False', 'no_print': 'None', 'quiet': 'False', 'empty': 'None', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'static_parser': 'True', 'invocation_command': 'dbt init educluster', 'introspect': 'True', 'target_path': 'None', 'log_format': 'default', 'send_anonymous_usage_stats': 'True'}
+[0m15:18:10.000678 [warn ] [MainThread]: [ConfigFolderDirectory]: Unable to parse logging event dictionary. Failed to parse dir field: expected string or bytes-like object, got 'WindowsPath'.. Dictionary: {'dir': WindowsPath('C:/Users/m/.dbt')}
+[0m15:18:10.001681 [info ] [MainThread]: Creating dbt configuration folder at 
+[0m15:18:10.004707 [info ] [MainThread]: A project called educluster already exists here.
+[0m15:18:10.005736 [debug] [MainThread]: Command `dbt init` succeeded at 15:18:10.005736 after 0.24 seconds
+[0m15:18:10.006722 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000026C2914EBD0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000026C2929F6B0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000026C2929C050>]}
+[0m15:18:10.007721 [debug] [MainThread]: Flushing usage events
+[0m15:18:54.696470 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001D71DF95EB0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001D71CFD7EC0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001D71DFFF950>]}
+
+
+============================== 15:18:54.700540 | f991e8ac-9464-40a7-89db-6673cddf4d4e ==============================
+[0m15:18:54.700540 [info ] [MainThread]: Running with dbt=1.8.4
+[0m15:18:54.701482 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'write_json': 'True', 'log_cache_events': 'False', 'partial_parse': 'True', 'cache_selected_only': 'False', 'profiles_dir': 'C:\\Users\\m\\.dbt', 'debug': 'False', 'warn_error': 'None', 'log_path': 'logs', 'version_check': 'True', 'fail_fast': 'False', 'use_colors': 'True', 'use_experimental_parser': 'False', 'no_print': 'None', 'quiet': 'False', 'empty': 'None', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'introspect': 'True', 'log_format': 'default', 'static_parser': 'True', 'target_path': 'None', 'invocation_command': 'dbt init educluster', 'send_anonymous_usage_stats': 'True'}
+[0m15:18:54.729523 [debug] [MainThread]: Starter project path: C:\Users\m\Desktop\Master IA ben msik\S2\MLOps\Projet\.venv\Lib\site-packages\dbt\include\starter_project
+[0m15:18:54.759610 [info ] [MainThread]: 
+Your new dbt project "educluster" was created!
+
+For more information on how to configure the profiles.yml file,
+please consult the dbt documentation here:
+
+  https://docs.getdbt.com/docs/configure-your-profile
+
+One more thing:
+
+Need help? Don't hesitate to reach out to us via GitHub issues or on Slack:
+
+  https://community.getdbt.com/
+
+Happy modeling!
+
+[0m15:18:54.759610 [info ] [MainThread]: Setting up your profile.
+[0m15:18:59.441842 [info ] [MainThread]: Profile educluster written to C:\Users\m\.dbt\profiles.yml using target's sample configuration. Once updated, you'll be able to start developing with dbt.
+[0m15:18:59.442845 [debug] [MainThread]: Command `dbt init` succeeded at 15:18:59.442845 after 4.91 seconds
+[0m15:18:59.443843 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001D71DEC5640>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001D71E2C7E30>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001D71E323860>]}
+[0m15:18:59.443843 [debug] [MainThread]: Flushing usage events
