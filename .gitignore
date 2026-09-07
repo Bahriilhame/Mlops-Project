@@ -1,21 +1,40 @@
-.venv/
+# Python
 __pycache__/
-.pytest_cache/
-.ruff_cache/
-.dagster_home/
-.dvc_global/
-.dvc_site_cache/
-.dvc_system/
-.dlt_home/
-.dlt_data/
-mlruns/
-data/raw/*.csv
-!data/raw/*.csv.dvc
-data/*.duckdb
-models/*.joblib
-models/*.json
-monitoring/*.jsonl
-metadata/*.json
-dbt/student_score/target/
-dbt/student_score/dbt_packages/
-dbt/student_score/logs/
+*.py[cod]
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data
+data/raw/*
+!data/raw/oulad.dvc
+data/processed/
+
+# DuckDB
+*.duckdb
+*.duckdb.wal
+*.duckdb.tmp
+
+# dbt
+dbt/*/target/
+dbt/*/logs/
+dbt/*/dbt_packages/
+
+# Dagster
+.dagster/
+
+# DVC cache
+.dvc/cache/
+
+# Environment
+.env
+
+# OS
+.DS_Store
+Thumbs.db
