@@ -38,3 +38,14 @@ dbt/*/dbt_packages/
 # OS
 .DS_Store
 Thumbs.db
+
+# MLflow
+mlruns/
+
+# Python temporary files
+tmpeu8smvia/
+# MLflow
+mlruns/
+
+# Temporary files
+tmpeu8smvia/

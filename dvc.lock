@@ -1,0 +1,58 @@
+schema: '2.0'
+stages:
+  prepare_features:
+    cmd: python ml/prepare_data.py
+    deps:
+    - path: ml/prepare_data.py
+      hash: md5
+      md5: 8826848ebad0edeec952b130364eefbf
+      size: 6389
+    - path: oulad_pipeline.duckdb
+      hash: md5
+      md5: f959d861fd4ab20518f06952e5bcce2d
+      size: 73150464
+    outs:
+    - path: data/processed/clustering_features.csv
+      hash: md5
+      md5: 519a37fdbe214bab4fbd4f4a38494209
+      size: 21710009
+    - path: data/processed/scaler.joblib
+      hash: md5
+      md5: fc57a44d119943e5515670f93853335a
+      size: 2519
+  train_kmeans:
+    cmd: python ml/clustering.py
+    deps:
+    - path: data/processed/clustering_features.csv
+      hash: md5
+      md5: 519a37fdbe214bab4fbd4f4a38494209
+      size: 21710009
+    - path: ml/clustering.py
+      hash: md5
+      md5: 5e670f9606996d36f4242e3f14586949
+      size: 8051
+    - path: oulad_pipeline.duckdb
+      hash: md5
+      md5: f959d861fd4ab20518f06952e5bcce2d
+      size: 73150464
+    outs:
+    - path: data/processed/cluster_final_result_profile.csv
+      hash: md5
+      md5: 96be464c3a854af71d4a518164a75158
+      size: 179
+    - path: data/processed/cluster_profiles.csv
+      hash: md5
+      md5: fc6c9690da8fbc07cf0503f01337ee8c
+      size: 127
+    - path: data/processed/clustered_students.csv
+      hash: md5
+      md5: 499e3727bc7adc4c2923c23d779bc6c8
+      size: 2744590
+    - path: data/processed/kmeans_metrics.json
+      hash: md5
+      md5: b006d4b26833934acc5a11c2220a9241
+      size: 373
+    - path: models/kmeans_final.joblib
+      hash: md5
+      md5: e299fb889a1ed2939caf271500f0d1a0
+      size: 132731

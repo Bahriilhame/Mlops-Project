@@ -1,0 +1,406 @@
+# from pathlib import Path
+# import subprocess
+# import sys
+
+# from dagster import (
+#     Definitions,
+#     job,
+#     op,
+# )
+
+
+# PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+
+# @op
+# def run_dlt():
+
+#     print("=" * 60)
+#     print("STEP 1 - DLT")
+#     print("=" * 60)
+
+#     script = (
+#         PROJECT_ROOT
+#         / "dlt_pipeline"
+#         / "load_oulad.py"
+#     )
+
+#     subprocess.run(
+#         [sys.executable, str(script)],
+#         cwd=PROJECT_ROOT,
+#         check=True,
+#     )
+
+#     print("DLT terminé.")
+
+#     return "dlt_completed"
+
+
+# @op
+# def run_dbt(dlt_result):
+
+#     print("=" * 60)
+#     print("STEP 2 - DBT")
+#     print("=" * 60)
+
+#     dbt_project = (
+#         PROJECT_ROOT
+#         / "dbt"
+#         / "educluster"
+#     )
+
+#     subprocess.run(
+#         [
+#             "dbt",
+#             "run",
+#         ],
+#         cwd=dbt_project,
+#         check=True,
+#         shell=True,
+#     )
+
+#     print("dbt terminé.")
+
+#     return "dbt_completed"
+
+
+# @op
+# def prepare_features(dbt_result):
+
+#     print("=" * 60)
+#     print("STEP 3 - PREPARATION DES FEATURES")
+#     print("=" * 60)
+
+#     script = (
+#         PROJECT_ROOT
+#         / "ml"
+#         / "prepare_data.py"
+#     )
+
+#     subprocess.run(
+#         [sys.executable, str(script)],
+#         cwd=PROJECT_ROOT,
+#         check=True,
+#     )
+
+#     print("Features préparées.")
+
+#     return "features_completed"
+
+
+# @op
+# def train_kmeans(features_result):
+
+#     print("=" * 60)
+#     print("STEP 4 - K-MEANS")
+#     print("=" * 60)
+
+#     script = (
+#         PROJECT_ROOT
+#         / "ml"
+#         / "clustering.py"
+#     )
+
+#     subprocess.run(
+#         [sys.executable, str(script)],
+#         cwd=PROJECT_ROOT,
+#         check=True,
+#     )
+
+#     print("K-Means terminé.")
+
+#     return "kmeans_completed"
+
+
+# @op
+# def train_mlflow(kmeans_result):
+
+#     print("=" * 60)
+#     print("STEP 5 - MLFLOW")
+#     print("=" * 60)
+
+#     script = (
+#         PROJECT_ROOT
+#         / "ml"
+#         / "train_mlflow.py"
+#     )
+
+#     subprocess.run(
+#         [sys.executable, str(script)],
+#         cwd=PROJECT_ROOT,
+#         check=True,
+#     )
+
+#     print("MLflow terminé.")
+
+
+# @job
+# def educluster_pipeline():
+
+#     dlt_result = run_dlt()
+
+#     dbt_result = run_dbt(
+#         dlt_result
+#     )
+
+#     features_result = prepare_features(
+#         dbt_result
+#     )
+
+#     kmeans_result = train_kmeans(
+#         features_result
+#     )
+
+#     train_mlflow(
+#         kmeans_result
+#     )
+
+
+# defs = Definitions(
+#     jobs=[
+#         educluster_pipeline,
+#     ],
+# )
+
+
+
+
+
+
+from pathlib import Path
+import subprocess
+import sys
+
+from dagster import asset, Definitions, MaterializeResult, MetadataValue
+
+
+# ============================================================
+# CONFIGURATION
+# ============================================================
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+DLT_SCRIPT = PROJECT_ROOT / "dlt_pipeline" / "load_oulad.py"
+DBT_PROJECT = PROJECT_ROOT / "dbt" / "educluster"
+
+FEATURE_SCRIPT = PROJECT_ROOT / "ml" / "prepare_data.py"
+KMEANS_SCRIPT = PROJECT_ROOT / "ml" / "clustering.py"
+MLFLOW_SCRIPT = PROJECT_ROOT / "ml" / "train_mlflow.py"
+
+DUCKDB_PATH = PROJECT_ROOT / "oulad_pipeline.duckdb"
+
+FEATURES_PATH = PROJECT_ROOT / "data" / "processed" / "clustering_features.csv"
+SCALER_PATH = PROJECT_ROOT / "data" / "processed" / "scaler.joblib"
+
+KMEANS_MODEL_PATH = PROJECT_ROOT / "models" / "kmeans_final.joblib"
+KMEANS_METRICS_PATH = (
+    PROJECT_ROOT / "data" / "processed" / "kmeans_metrics.json"
+)
+
+CLUSTERED_STUDENTS_PATH = (
+    PROJECT_ROOT / "data" / "processed" / "clustered_students.csv"
+)
+
+CLUSTER_PROFILES_PATH = (
+    PROJECT_ROOT / "data" / "processed" / "cluster_profiles.csv"
+)
+
+CLUSTER_FINAL_RESULT_PATH = (
+    PROJECT_ROOT / "data" / "processed" / "cluster_final_result_profile.csv"
+)
+
+
+# ============================================================
+# ASSET 1 — DLT
+# ============================================================
+
+@asset(
+    name="oulad_raw",
+    description="OULAD raw data ingested by DLT into DuckDB."
+)
+def oulad_raw() -> MaterializeResult:
+
+    print("=" * 60)
+    print("ASSET 1 - DLT / OULAD RAW")
+    print("=" * 60)
+
+    subprocess.run(
+        [sys.executable, str(DLT_SCRIPT)],
+        cwd=PROJECT_ROOT,
+        check=True,
+    )
+
+    print("DLT terminé.")
+
+    return MaterializeResult(
+        metadata={
+            "destination": MetadataValue.path(str(DUCKDB_PATH)),
+            "dataset": "raw",
+            "database": MetadataValue.path(str(DUCKDB_PATH)),
+        }
+    )
+
+
+# ============================================================
+# ASSET 2 — DBT
+# ============================================================
+
+@asset(
+    name="student_learning_features",
+    deps=[oulad_raw],
+    description="Student learning features generated by dbt."
+)
+def student_learning_features() -> MaterializeResult:
+
+    print("=" * 60)
+    print("ASSET 2 - DBT")
+    print("=" * 60)
+
+    subprocess.run(
+        ["dbt", "run"],
+        cwd=DBT_PROJECT,
+        check=True,
+        shell=True,
+    )
+
+    print("dbt terminé.")
+
+    return MaterializeResult(
+        metadata={
+            "database": MetadataValue.path(str(DUCKDB_PATH)),
+            "table": "main.student_learning_features",
+            "rows": 32593,
+            "columns": 46,
+        }
+    )
+
+
+# ============================================================
+# ASSET 3 — FEATURES
+# ============================================================
+
+@asset(
+    name="clustering_features",
+    deps=[student_learning_features],
+    description="Standardized behavioral features used for clustering."
+)
+def clustering_features() -> MaterializeResult:
+
+    print("=" * 60)
+    print("ASSET 3 - FEATURE ENGINEERING")
+    print("=" * 60)
+
+    subprocess.run(
+        [sys.executable, str(FEATURE_SCRIPT)],
+        cwd=PROJECT_ROOT,
+        check=True,
+    )
+
+    print("Features préparées.")
+
+    return MaterializeResult(
+        metadata={
+            "file": MetadataValue.path(str(FEATURES_PATH)),
+            "scaler": MetadataValue.path(str(SCALER_PATH)),
+            "rows": 32593,
+            "features": 34,
+        }
+    )
+
+
+# ============================================================
+# ASSET 4 — K-MEANS
+# ============================================================
+
+@asset(
+    name="kmeans_model",
+    deps=[clustering_features],
+    description="Final K-Means clustering model with two student profiles."
+)
+def kmeans_model() -> MaterializeResult:
+
+    print("=" * 60)
+    print("ASSET 4 - K-MEANS")
+    print("=" * 60)
+
+    subprocess.run(
+        [sys.executable, str(KMEANS_SCRIPT)],
+        cwd=PROJECT_ROOT,
+        check=True,
+    )
+
+    print("K-Means terminé.")
+
+    return MaterializeResult(
+        metadata={
+            "model": MetadataValue.path(str(KMEANS_MODEL_PATH)),
+            "metrics": MetadataValue.path(str(KMEANS_METRICS_PATH)),
+            "clustered_students": MetadataValue.path(
+                str(CLUSTERED_STUDENTS_PATH)
+            ),
+            "cluster_profiles": MetadataValue.path(
+                str(CLUSTER_PROFILES_PATH)
+            ),
+            "final_result_profile": MetadataValue.path(
+                str(CLUSTER_FINAL_RESULT_PATH)
+            ),
+            "n_clusters": 2,
+            "n_students": 32593,
+            "n_features": 34,
+            "silhouette": 0.4569,
+            "davies_bouldin": 0.9109,
+            "calinski_harabasz": 24838.61,
+        }
+    )
+
+
+# ============================================================
+# ASSET 5 — MLFLOW
+# ============================================================
+
+@asset(
+    name="mlflow_kmeans_experiment",
+    deps=[kmeans_model],
+    description="K-Means experiment tracked and versioned with MLflow."
+)
+def mlflow_kmeans_experiment() -> MaterializeResult:
+
+    print("=" * 60)
+    print("ASSET 5 - MLFLOW")
+    print("=" * 60)
+
+    subprocess.run(
+        [sys.executable, str(MLFLOW_SCRIPT)],
+        cwd=PROJECT_ROOT,
+        check=True,
+    )
+
+    print("MLflow terminé.")
+
+    return MaterializeResult(
+        metadata={
+            "experiment": "EduCluster-KMeans",
+            "tracking_directory": MetadataValue.path(
+                str(PROJECT_ROOT / "mlruns")
+            ),
+            "model": MetadataValue.path(str(KMEANS_MODEL_PATH)),
+            "silhouette": 0.4569,
+            "davies_bouldin": 0.9109,
+            "calinski_harabasz": 24838.61,
+        }
+    )
+
+
+# ============================================================
+# DAGSTER DEFINITIONS
+# ============================================================
+
+defs = Definitions(
+    assets=[
+        oulad_raw,
+        student_learning_features,
+        clustering_features,
+        kmeans_model,
+        mlflow_kmeans_experiment,
+    ]
+)
