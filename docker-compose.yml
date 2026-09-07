@@ -1,4 +1,15 @@
 services:
+  # api:
+  #   build: .
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     - MODEL_PATH=models/student_score_model.joblib
+  #     - PREDICTION_LOG_PATH=monitoring/predictions.jsonl
+  #   volumes:
+  #     - ./models:/app/models
+  #     - ./monitoring:/app/monitoring
+
   api:
     build: .
     ports:
@@ -9,6 +20,9 @@ services:
     volumes:
       - ./models:/app/models
       - ./monitoring:/app/monitoring
+    command: >
+      sh -c "python src/train.py &&
+            uvicorn api.main:app --host 0.0.0.0 --port 8000"
 
   mlflow:
     image: python:3.12-slim
