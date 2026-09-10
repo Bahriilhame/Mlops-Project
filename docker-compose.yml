@@ -6,7 +6,7 @@ services:
       dockerfile: Dockerfile
     container_name: educluster-api
     ports:
-      - "8000:8000"
+      - "8002:8000"
     depends_on:
       - mlflow
     restart: unless-stopped
