@@ -12,9 +12,9 @@ venv/
 .ipynb_checkpoints/
 
 # Data
-# data/raw/*
-# !data/raw/oulad.dvc
-# data/processed/
+data/raw/*
+!data/raw/oulad.dvc
+data/processed/
 
 # DuckDB
 *.duckdb
@@ -53,3 +53,5 @@ tmpeu8smvia/
 
 # Google OAuth credentials
 client_secrets.json
+
+projet-v1/data
