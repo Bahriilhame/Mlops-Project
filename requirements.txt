@@ -6,7 +6,7 @@ dagster
 dagster-webserver
 pytest
 numpy 
-scikit-learn
+scikit-learn==1.5.1
 joblib
 fastapi==0.111.1
 fastapi-cli==0.0.28

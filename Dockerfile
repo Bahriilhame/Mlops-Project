@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY api ./api
 COPY models ./models
 COPY data/processed/scaler.joblib ./data/processed/scaler.joblib
+COPY data/processed/ ./data/processed/
 
 EXPOSE 8000
 

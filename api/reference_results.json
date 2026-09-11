@@ -1,0 +1,11 @@
+{
+  "description": "Résultats de référence fournis pour le projet EduCluster ; utilisés uniquement en l’absence de sorties locales correspondantes.",
+  "model": "KMeans",
+  "n_clusters": 2,
+  "n_samples": 32593,
+  "n_features": 34,
+  "cluster_sizes": { "0": 25612, "1": 6981 },
+  "silhouette_score": 0.4569,
+  "davies_bouldin_score": 0.9109,
+  "calinski_harabasz_score": 24838.61
+}

@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 .venv/
+.venv-dashboard/
 venv/
 
 # IDE
@@ -54,4 +55,17 @@ tmpeu8smvia/
 # Google OAuth credentials
 client_secrets.json
 
-projet-v1/data
+projet-v1/
+
+# React / Vite
+node_modules/
+dashboard/dist/
+dashboard/coverage/
+
+# Local configuration and credentials
+.env.*
+!.env.example
+**/credentials*.json
+*.pem
+*.key
+.pytest_cache/

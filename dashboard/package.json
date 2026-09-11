@@ -1,0 +1,32 @@
+{
+  "name": "educluster-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite --configLoader native --host localhost",
+    "build": "vite build --configLoader native",
+    "preview": "vite preview --configLoader native --host localhost",
+    "test": "vitest run --configLoader native"
+  },
+  "dependencies": {
+    "lucide-react": "1.44.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "recharts": "3.10.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.7",
+    "@vitejs/plugin-react": "6.1.1",
+    "jsdom": "29.1.1",
+    "tailwindcss": "4.3.3",
+    "vite": "8.3.0",
+    "vitest": "5.0.0"
+  }
+}

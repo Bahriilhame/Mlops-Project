@@ -1,9 +1,13 @@
 from pathlib import Path
+import os
 
 import joblib
 import numpy as np
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+
+from api.dashboard import model_information, router as dashboard_router
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -17,6 +21,17 @@ app = FastAPI(
     description="API for student learning behavior segmentation",
     version="1.0.0",
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[origin.strip() for origin in os.getenv(
+        "CORS_ORIGINS", "http://localhost:5173,http://localhost:4173,http://localhost:8080"
+    ).split(",") if origin.strip()],
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
+app.include_router(dashboard_router)
 
 
 model = joblib.load(MODEL_PATH)
@@ -182,3 +197,8 @@ def predict(student: StudentFeatures):
             status_code=500,
             detail=str(exc),
         )
+
+
+@app.get("/model-info")
+def model_info():
+    return model_information(model, len(FEATURES))

@@ -11,6 +11,7 @@ __pycache__
 
 data/raw
 data/processed/*.csv
+!data/processed/clustered_students.csv
 
 mlruns
 dbt
@@ -20,3 +21,11 @@ tests
 
 *.duckdb
 *.log
+
+# Frontend has its own build context. Keep secrets and the old project out.
+dashboard
+projet-v1
+.env
+.env.*
+**/client_secrets.json
+**/credentials*.json
