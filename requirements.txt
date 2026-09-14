@@ -11,3 +11,4 @@ joblib
 fastapi==0.111.1
 fastapi-cli==0.0.28
 uvicorn==0.30.3
+
