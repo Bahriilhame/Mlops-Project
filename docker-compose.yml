@@ -1,3 +1,43 @@
+# services:
+
+#   api:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile
+#     container_name: educluster-api
+#     environment:
+#       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:4173,http://localhost:8080}
+#     ports:
+#       - "8002:8000"
+#     depends_on:
+#       - mlflow
+#     restart: unless-stopped
+
+#   mlflow:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile.mlflow
+#     container_name: educluster-mlflow
+#     volumes:
+#       - ./mlruns:/mlflow/mlruns
+#     ports:
+#       - "5001:5000"
+#     restart: unless-stopped
+
+#   dashboard:
+#     build:
+#       context: ./dashboard
+#       dockerfile: Dockerfile
+#       args:
+#         VITE_API_URL: ${VITE_API_URL:-http://localhost:8002}
+#         VITE_MLFLOW_URL: ${VITE_MLFLOW_URL:-http://localhost:5001}
+#     ports:
+#       - "${DASHBOARD_PORT:-8080}:80"
+#     depends_on:
+#       - api
+#     restart: unless-stopped
+
+
 services:
 
   api:
@@ -6,9 +46,9 @@ services:
       dockerfile: Dockerfile
     container_name: educluster-api
     environment:
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:4173,http://localhost:8080}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4203}
     ports:
-      - "8002:8000"
+      - "4201:8000"
     depends_on:
       - mlflow
     restart: unless-stopped
@@ -21,7 +61,7 @@ services:
     volumes:
       - ./mlruns:/mlflow/mlruns
     ports:
-      - "5001:5000"
+      - "4202:5000"
     restart: unless-stopped
 
   dashboard:
@@ -29,10 +69,10 @@ services:
       context: ./dashboard
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8002}
-        VITE_MLFLOW_URL: ${VITE_MLFLOW_URL:-http://localhost:5001}
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:4201}
+        VITE_MLFLOW_URL: ${VITE_MLFLOW_URL:-http://localhost:4202}
     ports:
-      - "${DASHBOARD_PORT:-8080}:80"
+      - "${DASHBOARD_PORT:-4203}:80"
     depends_on:
       - api
     restart: unless-stopped
