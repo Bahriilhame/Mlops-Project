@@ -1,0 +1,92 @@
+name: EduCluster CI / Komodo CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: educluster-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  api:
+    name: API and persisted models
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install API test dependencies
+        run: python -m pip install fastapi==0.111.1 uvicorn==0.30.3 scikit-learn==1.5.1 'numpy<2' joblib httpx
+      - name: Regression tests with the committed model and scaler
+        run: python -m unittest discover -s tests -p test_dashboard_api.py -v
+      - name: Deployment helper tests
+        run: python -m unittest discover -s tests -p test_komodo_webhook.py -v
+
+  frontend:
+    name: React tests and production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: dashboard
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+  images:
+    name: Validate Compose and build all three images
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose config --quiet
+      - run: docker compose build api dashboard mlflow
+
+  deploy:
+    name: Trigger existing Komodo stack
+    needs: [api, frontend, images]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Skip superseded commits
+        id: current
+        shell: bash
+        run: |
+          latest="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [ -z "$latest" ]; then
+            echo 'Unable to resolve main.' >&2
+            exit 1
+          fi
+          if [ "$latest" = "$GITHUB_SHA" ]; then
+            echo 'deploy=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'deploy=false' >> "$GITHUB_OUTPUT"
+            echo 'Deployment skipped: a more recent commit exists on main.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Send signed webhook after successful CI
+        if: steps.current.outputs.deploy == 'true'
+        env:
+          KOMODO_WEBHOOK_URL: ${{ secrets.KOMODO_WEBHOOK_URL }}
+          KOMODO_WEBHOOK_SECRET: ${{ secrets.KOMODO_WEBHOOK_SECRET }}
+        run: python scripts/trigger_komodo.py
