@@ -3,17 +3,20 @@ import os
 
 import joblib
 import numpy as np
+import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from api.dashboard import model_information, router as dashboard_router
+from scripts.validate_model_bundle import validate_bundle
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 MODEL_PATH = BASE_DIR / "models" / "kmeans_final.joblib"
 SCALER_PATH = BASE_DIR / "data" / "processed" / "scaler.joblib"
+MANIFEST = validate_bundle(BASE_DIR)
 
 
 app = FastAPI(
@@ -38,73 +41,11 @@ model = joblib.load(MODEL_PATH)
 scaler = joblib.load(SCALER_PATH)
 
 
-FEATURES = [
-    "total_vle_interactions",
-    "total_clicks",
-    "active_days",
-    "active_weeks",
-    "activity_span_days",
-    "unique_resource_visits",
-    "avg_daily_clicks",
-    "median_daily_clicks",
-    "max_daily_clicks",
-    "clicks_std",
-    "avg_clicks_per_event",
-    "clicks_content",
-    "clicks_forum",
-    "clicks_quiz",
-    "clicks_wiki",
-    "clicks_other",
-    "content_ratio",
-    "forum_ratio",
-    "quiz_ratio",
-    "wiki_ratio",
-    "other_ratio",
-    "assessment_count",
-    "expected_assessment_count",
-    "submission_rate",
-    "avg_assessment_score",
-    "min_assessment_score",
-    "max_assessment_score",
-    "assessment_score_std",
-    "late_submission_count",
-    "late_submission_rate",
-    "avg_submission_delay",
-    "median_submission_delay",
-    "max_submission_delay",
-    "on_time_submission_rate",
-]
-
-
-COUNT_FEATURES = {
-    "total_vle_interactions",
-    "total_clicks",
-    "active_days",
-    "active_weeks",
-    "activity_span_days",
-    "unique_resource_visits",
-    "avg_daily_clicks",
-    "median_daily_clicks",
-    "max_daily_clicks",
-    "clicks_std",
-    "avg_clicks_per_event",
-    "clicks_content",
-    "clicks_forum",
-    "clicks_quiz",
-    "clicks_wiki",
-    "clicks_other",
-    "assessment_count",
-    "expected_assessment_count",
-    "late_submission_count",
-    "avg_submission_delay",
-    "median_submission_delay",
-    "max_submission_delay",
-}
-
-
+FEATURES = MANIFEST["features"]
+COUNT_FEATURES = set(MANIFEST["count_features"])
 CLUSTER_NAMES = {
-    0: "Active / Engaged Learner",
-    1: "Low-Engagement / At-Risk Learner",
+    int(cluster): profile
+    for cluster, profile in MANIFEST["cluster_profiles"].items()
 }
 
 
@@ -145,6 +86,12 @@ class StudentFeatures(BaseModel):
     on_time_submission_rate: float
 
 
+if list(StudentFeatures.model_fields) != FEATURES:
+    raise RuntimeError(
+        "Le schéma de l'API ne correspond pas à l'ordre des features du bundle."
+    )
+
+
 @app.get("/")
 def root():
     return {
@@ -160,6 +107,8 @@ def health():
         "status": "healthy",
         "model": "kmeans_final.joblib",
         "clusters": 2,
+        "model_version": MANIFEST["model_version"],
+        "model_sha256": MANIFEST["model_sha256"],
     }
 
 
@@ -178,9 +127,10 @@ def predict(student: StudentFeatures):
 
             values.append(value)
 
-        X = np.array(values).reshape(1, -1)
+        X = pd.DataFrame([values], columns=FEATURES)
 
         X_scaled = scaler.transform(X)
+        X_scaled = pd.DataFrame(X_scaled, columns=FEATURES)
 
         cluster = int(model.predict(X_scaled)[0])
 
@@ -201,4 +151,10 @@ def predict(student: StudentFeatures):
 
 @app.get("/model-info")
 def model_info():
-    return model_information(model, len(FEATURES))
+    info = model_information(model, len(FEATURES))
+    info.update({
+        "model_version": MANIFEST["model_version"],
+        "model_sha256": MANIFEST["model_sha256"],
+        "training_commit": MANIFEST["training_git_commit"],
+    })
+    return info

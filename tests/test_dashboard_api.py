@@ -7,7 +7,7 @@ import numpy as np
 from fastapi.testclient import TestClient
 
 from api import dashboard
-from api.main import app, FEATURES, COUNT_FEATURES, CLUSTER_NAMES, model, scaler
+from api.main import app, FEATURES, COUNT_FEATURES, CLUSTER_NAMES, MANIFEST, model, scaler
 
 
 class DashboardApiTests(unittest.TestCase):
@@ -17,7 +17,10 @@ class DashboardApiTests(unittest.TestCase):
 
     def test_existing_root_and_health(self):
         self.assertEqual(self.client.get('/').json()['name'], 'EduCluster API')
-        self.assertEqual(self.client.get('/health').json()['status'], 'healthy')
+        health = self.client.get('/health').json()
+        self.assertEqual(health['status'], 'healthy')
+        self.assertEqual(health['model_sha256'], MANIFEST['model_sha256'])
+        self.assertEqual(health['model_version'], MANIFEST['model_version'])
 
     def test_prediction_uses_unchanged_preprocessing_and_real_model(self):
         self.assertEqual(len(FEATURES), 34)
@@ -61,6 +64,7 @@ class DashboardApiTests(unittest.TestCase):
         self.assertEqual(info.status_code, 200)
         self.assertEqual(info.json()['silhouette_score'], .4569)
         self.assertEqual(info.json()['features'], 34)
+        self.assertEqual(info.json()['model_sha256'], MANIFEST['model_sha256'])
 
     def test_local_metrics_take_priority(self):
         metrics = {'n_samples': 10, 'cluster_sizes': {'0': 7, '1': 3},

@@ -124,6 +124,7 @@ def load_features() -> pd.DataFrame:
     query = """
         SELECT *
         FROM main.student_learning_features
+        ORDER BY id_student, code_module, code_presentation
     """
 
     df = con.execute(query).df()

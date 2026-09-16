@@ -6,6 +6,6 @@ const metrics = [
   ['calinski_harabasz_score', 'Calinski–Harabasz Score', 'Higher is generally better', 2, ArrowUpRight],
 ];
 export default function ModelMetrics({ info }) {
-  return <div className="metric-grid">{metrics.map(([key, label, hint, digits, Icon]) => <div className="metric-item" key={key}><span>{label}</span><strong>{formatNumber(info[key], digits)}</strong><small><Icon size={15}/>{info[key] === null ? 'Métrique non disponible' : hint}</small></div>)}</div>;
+  return <><div className="metric-grid">{metrics.map(([key, label, hint, digits, Icon]) => <div className="metric-item" key={key}><span>{label}</span><strong>{formatNumber(info[key], digits)}</strong><small><Icon size={15}/>{info[key] === null ? 'Métrique non disponible' : hint}</small></div>)}</div><p className="model-version">Bundle déployé <strong>{info.model_version}</strong> · SHA-256 <code>{info.model_sha256.slice(0, 12)}</code></p></>;
 }
 

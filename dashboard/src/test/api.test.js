@@ -7,8 +7,8 @@ import { resolve } from 'node:path';
 const valid = () => Object.fromEntries(FEATURES.map(f => [f.name, 0]));
 describe('FastAPI contract', () => {
   it('matches exactly the 34 backend features in order', () => {
-    const backend = readFileSync(resolve(process.cwd(), '../api/main.py'), 'utf8');
-    const names = [...backend.match(/FEATURES = \[([\s\S]*?)\]/)[1].matchAll(/"([^"]+)"/g)].map(m => m[1]);
+    const manifest = JSON.parse(readFileSync(resolve(process.cwd(), '../models/model_manifest.json'), 'utf8'));
+    const names = manifest.features;
     expect(FEATURES.map(f => f.name)).toEqual(names);
     expect(new Set(names).size).toBe(34);
     expect(FEATURE_GROUPS.map(g => g.fields.length)).toEqual([6, 5, 10, 7, 6]);

@@ -1,8 +1,8 @@
 import { toPayload } from '../data/features';
 
-export const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8002').replace(/\/+$/, '');
-const configuredMlflow = import.meta.env.VITE_MLFLOW_URL || 'http://localhost:5001';
-export const MLFLOW_URL = /^https?:\/\//i.test(configuredMlflow) ? configuredMlflow : 'http://localhost:5001';
+export const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:4201').replace(/\/+$/, '');
+const configuredMlflow = import.meta.env.VITE_MLFLOW_URL || 'http://localhost:4202';
+export const MLFLOW_URL = /^https?:\/\//i.test(configuredMlflow) ? configuredMlflow : 'http://localhost:4202';
 
 export class ApiError extends Error {
   constructor(message, fieldErrors = {}) {
@@ -60,6 +60,7 @@ export async function getModelInfo() {
   const result = await request('/model-info');
   const metrics = ['silhouette_score', 'davies_bouldin_score', 'calinski_harabasz_score'];
   if (!result || result.algorithm !== 'KMeans' || result.n_clusters !== 2 || result.features !== 34 ||
+      typeof result.model_version !== 'string' || !/^[a-f0-9]{64}$/.test(result.model_sha256 || '') ||
       metrics.some(key => result[key] !== null && !Number.isFinite(result[key]))) {
     throw new ApiError('Les informations du modèle sont incomplètes ou invalides.');
   }

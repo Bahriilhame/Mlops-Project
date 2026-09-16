@@ -168,6 +168,8 @@
 
 
 from pathlib import Path
+import csv
+import json
 import subprocess
 import sys
 
@@ -185,7 +187,7 @@ DBT_PROJECT = PROJECT_ROOT / "dbt" / "educluster"
 
 FEATURE_SCRIPT = PROJECT_ROOT / "ml" / "prepare_data.py"
 KMEANS_SCRIPT = PROJECT_ROOT / "ml" / "clustering.py"
-MLFLOW_SCRIPT = PROJECT_ROOT / "ml" / "train_mlflow.py"
+MLFLOW_SCRIPT = PROJECT_ROOT / "scripts" / "log_to_mlflow.py"
 
 DUCKDB_PATH = PROJECT_ROOT / "oulad_pipeline.duckdb"
 
@@ -208,6 +210,18 @@ CLUSTER_PROFILES_PATH = (
 CLUSTER_FINAL_RESULT_PATH = (
     PROJECT_ROOT / "data" / "processed" / "cluster_final_result_profile.csv"
 )
+
+
+def csv_shape(path: Path) -> tuple[int, int]:
+    with path.open("r", encoding="utf-8", newline="") as stream:
+        reader = csv.reader(stream)
+        header = next(reader)
+        return sum(1 for _ in reader), len(header)
+
+
+def read_metrics() -> dict:
+    with KMEANS_METRICS_PATH.open("r", encoding="utf-8") as stream:
+        return json.load(stream)
 
 
 # ============================================================
@@ -257,10 +271,12 @@ def student_learning_features() -> MaterializeResult:
     print("=" * 60)
 
     subprocess.run(
-        ["dbt", "run"],
-        cwd=DBT_PROJECT,
+        [
+            "dbt", "build", "--project-dir", str(DBT_PROJECT),
+            "--profiles-dir", str(PROJECT_ROOT / "dbt"),
+        ],
+        cwd=PROJECT_ROOT,
         check=True,
-        shell=True,
     )
 
     print("dbt terminé.")
@@ -269,8 +285,7 @@ def student_learning_features() -> MaterializeResult:
         metadata={
             "database": MetadataValue.path(str(DUCKDB_PATH)),
             "table": "main.student_learning_features",
-            "rows": 32593,
-            "columns": 46,
+            "validation": "dbt build (models + tests) passed",
         }
     )
 
@@ -298,12 +313,14 @@ def clustering_features() -> MaterializeResult:
 
     print("Features préparées.")
 
+    rows, columns = csv_shape(FEATURES_PATH)
+
     return MaterializeResult(
         metadata={
             "file": MetadataValue.path(str(FEATURES_PATH)),
             "scaler": MetadataValue.path(str(SCALER_PATH)),
-            "rows": 32593,
-            "features": 34,
+            "rows": rows,
+            "features": columns,
         }
     )
 
@@ -331,6 +348,8 @@ def kmeans_model() -> MaterializeResult:
 
     print("K-Means terminé.")
 
+    metrics = read_metrics()
+
     return MaterializeResult(
         metadata={
             "model": MetadataValue.path(str(KMEANS_MODEL_PATH)),
@@ -344,12 +363,12 @@ def kmeans_model() -> MaterializeResult:
             "final_result_profile": MetadataValue.path(
                 str(CLUSTER_FINAL_RESULT_PATH)
             ),
-            "n_clusters": 2,
-            "n_students": 32593,
-            "n_features": 34,
-            "silhouette": 0.4569,
-            "davies_bouldin": 0.9109,
-            "calinski_harabasz": 24838.61,
+            "n_clusters": metrics["n_clusters"],
+            "n_students": metrics["n_samples"],
+            "n_features": metrics["n_features"],
+            "silhouette": metrics["silhouette_score"],
+            "davies_bouldin": metrics["davies_bouldin_score"],
+            "calinski_harabasz": metrics["calinski_harabasz_score"],
         }
     )
 
@@ -377,6 +396,8 @@ def mlflow_kmeans_experiment() -> MaterializeResult:
 
     print("MLflow terminé.")
 
+    metrics = read_metrics()
+
     return MaterializeResult(
         metadata={
             "experiment": "EduCluster-KMeans",
@@ -384,9 +405,9 @@ def mlflow_kmeans_experiment() -> MaterializeResult:
                 str(PROJECT_ROOT / "mlruns")
             ),
             "model": MetadataValue.path(str(KMEANS_MODEL_PATH)),
-            "silhouette": 0.4569,
-            "davies_bouldin": 0.9109,
-            "calinski_harabasz": 24838.61,
+            "silhouette": metrics["silhouette_score"],
+            "davies_bouldin": metrics["davies_bouldin_score"],
+            "calinski_harabasz": metrics["calinski_harabasz_score"],
         }
     )
 

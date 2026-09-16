@@ -25,7 +25,9 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install API test dependencies
-        run: python -m pip install fastapi==0.111.1 uvicorn==0.30.3 scikit-learn==1.5.1 'numpy<2' joblib httpx
+        run: python -m pip install fastapi==0.111.1 uvicorn==0.30.3 scikit-learn==1.5.1 'numpy<2' pandas joblib httpx
+      - name: Validate deployable model bundle
+        run: python scripts/validate_model_bundle.py
       - name: Regression tests with the committed model and scaler
         run: python -m unittest discover -s tests -p test_dashboard_api.py -v
       - name: Deployment helper tests
@@ -63,7 +65,7 @@ jobs:
     needs: [api, frontend, images]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -90,3 +92,17 @@ jobs:
           KOMODO_WEBHOOK_URL: ${{ secrets.KOMODO_WEBHOOK_URL }}
           KOMODO_WEBHOOK_SECRET: ${{ secrets.KOMODO_WEBHOOK_SECRET }}
         run: python scripts/trigger_komodo.py
+      - name: Verify deployed API and dashboard
+        if: steps.current.outputs.deploy == 'true'
+        shell: bash
+        run: |
+          for attempt in $(seq 1 48); do
+            if curl --fail --silent --max-time 5 http://41.250.66.71:4201/health | grep -q 'model_version' \
+              && curl --fail --silent --max-time 5 http://41.250.66.71:4203/ >/dev/null; then
+              echo 'Deployment is healthy.' >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo 'Deployment did not become healthy before the timeout.' >&2
+          exit 1

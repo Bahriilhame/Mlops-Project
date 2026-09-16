@@ -48,7 +48,8 @@ services:
     ports:
       - "4201:8000"
     depends_on:
-      - mlflow
+      mlflow:
+        condition: service_healthy
     restart: unless-stopped
 
   mlflow:
@@ -57,7 +58,7 @@ services:
       dockerfile: Dockerfile.mlflow
     container_name: educluster-mlflow
     volumes:
-      - ./mlruns:/mlflow/mlruns
+      - ./mlflow-data:/mlflow/data
     ports:
       - "4202:5000"
     restart: unless-stopped
@@ -72,5 +73,6 @@ services:
     ports:
       - "${DASHBOARD_PORT:-4203}:80"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     restart: unless-stopped

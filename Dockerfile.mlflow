@@ -2,8 +2,16 @@ FROM python:3.11-slim
 
 WORKDIR /mlflow
 
-RUN pip install --no-cache-dir mlflow==2.14.3
+RUN pip install --no-cache-dir mlflow==2.14.3 scikit-learn==1.5.1 "numpy<2" joblib
+
+COPY scripts ./scripts
+COPY models ./models
+COPY api/reference_results.json ./api/reference_results.json
+COPY data/processed/scaler.joblib ./data/processed/scaler.joblib
 
 EXPOSE 5000
 
-CMD ["mlflow", "server", "--host", "0.0.0.0", "--port", "5000", "--backend-store-uri", "/mlflow/mlruns"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/health', timeout=3)" || exit 1
+
+CMD ["python", "scripts/start_mlflow.py"]

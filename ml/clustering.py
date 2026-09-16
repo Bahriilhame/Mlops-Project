@@ -1,5 +1,8 @@
 from pathlib import Path
+import hashlib
 import json
+import os
+import subprocess
 
 import duckdb
 import joblib
@@ -55,9 +58,41 @@ METRICS_PATH = (
 MODEL_DIR = PROJECT_ROOT / "models"
 
 MODEL_PATH = MODEL_DIR / "kmeans_final.joblib"
+SCALER_PATH = PROJECT_ROOT / "data" / "processed" / "scaler.joblib"
+MANIFEST_PATH = MODEL_DIR / "model_manifest.json"
+REFERENCE_RESULTS_PATH = PROJECT_ROOT / "api" / "reference_results.json"
 
 N_CLUSTERS = 2
 RANDOM_STATE = 42
+
+COUNT_FEATURES = [
+    "total_vle_interactions", "total_clicks", "active_days", "active_weeks",
+    "activity_span_days", "unique_resource_visits", "avg_daily_clicks",
+    "median_daily_clicks", "max_daily_clicks", "clicks_std",
+    "avg_clicks_per_event", "clicks_content", "clicks_forum", "clicks_quiz",
+    "clicks_wiki", "clicks_other", "assessment_count",
+    "expected_assessment_count", "late_submission_count",
+    "avg_submission_delay", "median_submission_delay", "max_submission_delay",
+]
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def git_commit() -> str:
+    if os.getenv("GITHUB_SHA"):
+        return os.environ["GITHUB_SHA"]
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT, text=True
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return "unknown"
 
 
 def load_student_metadata() -> pd.DataFrame:
@@ -85,6 +120,7 @@ def load_student_metadata() -> pd.DataFrame:
             disability,
             final_result
         FROM main.student_learning_features
+        ORDER BY id_student, code_module, code_presentation
     """
 
     df = con.execute(query).df()
@@ -136,6 +172,12 @@ def main():
         raise ValueError(
             "Le nombre de lignes du mart dbt "
             "ne correspond pas aux features."
+        )
+
+    student_key = ["id_student", "code_module", "code_presentation"]
+    if students.duplicated(student_key).any():
+        raise ValueError(
+            "La clé étudiant/module/présentation n'est pas unique dans le mart dbt."
         )
 
     # ---------------------------------------------------------
@@ -273,6 +315,58 @@ def main():
             file,
             indent=4,
         )
+
+    REFERENCE_RESULTS_PATH.write_text(
+        json.dumps(
+            {
+                **metrics,
+                "description": (
+                    "Métriques du modèle K-Means actuellement servi par l'API."
+                ),
+            },
+            indent=4,
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    # Les identifiants K-Means sont arbitraires. On détermine donc le profil
+    # engagé à partir de signaux d'engagement standardisés, au lieu de supposer
+    # que le cluster 0 gardera toujours la même signification.
+    engagement_features = [
+        "total_clicks", "active_days", "active_weeks", "submission_rate",
+        "avg_assessment_score", "on_time_submission_rate",
+    ]
+    engagement_score = X[engagement_features].mean(axis=1)
+    cluster_engagement = engagement_score.groupby(labels).mean()
+    engaged_cluster = int(cluster_engagement.idxmax())
+    cluster_profiles = {
+        str(cluster): (
+            "Active / Engaged Learner"
+            if int(cluster) == engaged_cluster
+            else "Low-Engagement / At-Risk Learner"
+        )
+        for cluster in sorted(set(labels))
+    }
+
+    commit = git_commit()
+    manifest = {
+        "model_name": "EduCluster-KMeans",
+        "model_version": f"{commit[:12]}-{sha256(MODEL_PATH)[:12]}",
+        "algorithm": "KMeans",
+        "training_git_commit": commit,
+        "model_sha256": sha256(MODEL_PATH),
+        "scaler_sha256": sha256(SCALER_PATH),
+        "metrics_file": "api/reference_results.json",
+        "features": list(X.columns),
+        "count_features": COUNT_FEATURES,
+        "cluster_profiles": cluster_profiles,
+    }
+    MANIFEST_PATH.write_text(
+        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    print(f"Bundle de déploiement : {MANIFEST_PATH}")
 
     print(
         f"Métriques sauvegardées : {METRICS_PATH}"

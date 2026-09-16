@@ -7,7 +7,6 @@ stages:
       - oulad_pipeline.duckdb
     outs:
       - data/processed/clustering_features.csv
-      - data/processed/scaler.joblib
 
   train_kmeans:
     cmd: python ml/clustering.py
@@ -15,11 +14,9 @@ stages:
       - ml/clustering.py
       - oulad_pipeline.duckdb
       - data/processed/clustering_features.csv
+      - data/processed/scaler.joblib
     outs:
-      - models/kmeans_final.joblib
       - data/processed/clustered_students.csv
       - data/processed/cluster_profiles.csv
       - data/processed/cluster_final_result_profile.csv
-    metrics:
-      - data/processed/kmeans_metrics.json:
-          cache: false
+      - data/processed/kmeans_metrics.json
