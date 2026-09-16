@@ -53,7 +53,7 @@ def send_request(request, opener=None, attempts=4, retry_delay=5, sleep=time.sle
             if exc.code in RETRYABLE_HTTP_CODES and attempt < attempts:
                 print(f'Komodo returned HTTP {exc.code}; retrying ({attempt}/{attempts}).',
                       file=sys.stderr)
-                sleep(retry_delay * attempt)
+                sleep(retry_delay)
                 continue
             raise RuntimeError(
                 f'Komodo returned HTTP {exc.code}. Check webhook settings and secret.'
@@ -71,7 +71,11 @@ def main():
     request = build_request(os.environ.get('KOMODO_WEBHOOK_URL', ''),
                             os.environ.get('KOMODO_WEBHOOK_SECRET', ''), payload)
     # A stable delivery ID lets Komodo identify repeated delivery attempts for the same commit.
-    send_request(request)
+    attempts = int(os.environ.get('KOMODO_RETRY_ATTEMPTS', '4'))
+    retry_delay = int(os.environ.get('KOMODO_RETRY_DELAY_SECONDS', '5'))
+    if not 1 <= attempts <= 60 or not 0 <= retry_delay <= 60:
+        raise ValueError('Komodo retry settings are outside their allowed range.')
+    send_request(request, attempts=attempts, retry_delay=retry_delay)
     message = ('Signed deployment request accepted by Komodo. '
                'Check the stack Updates for deployment completion and deployed commit.')
     print(message)

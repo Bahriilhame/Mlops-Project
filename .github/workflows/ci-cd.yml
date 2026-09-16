@@ -65,7 +65,7 @@ jobs:
     needs: [api, frontend, images]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -91,6 +91,8 @@ jobs:
         env:
           KOMODO_WEBHOOK_URL: ${{ secrets.KOMODO_WEBHOOK_URL }}
           KOMODO_WEBHOOK_SECRET: ${{ secrets.KOMODO_WEBHOOK_SECRET }}
+          KOMODO_RETRY_ATTEMPTS: '40'
+          KOMODO_RETRY_DELAY_SECONDS: '20'
         run: python scripts/trigger_komodo.py
       - name: Verify deployed API, dashboard, and Dagster
         if: steps.current.outputs.deploy == 'true'
