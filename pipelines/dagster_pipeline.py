@@ -170,6 +170,7 @@
 from pathlib import Path
 import csv
 import json
+import os
 import subprocess
 import sys
 
@@ -189,7 +190,9 @@ FEATURE_SCRIPT = PROJECT_ROOT / "ml" / "prepare_data.py"
 KMEANS_SCRIPT = PROJECT_ROOT / "ml" / "clustering.py"
 MLFLOW_SCRIPT = PROJECT_ROOT / "scripts" / "log_to_mlflow.py"
 
-DUCKDB_PATH = PROJECT_ROOT / "oulad_pipeline.duckdb"
+DUCKDB_PATH = Path(
+    os.getenv("EDUCLUSTER_DUCKDB_PATH", str(PROJECT_ROOT / "oulad_pipeline.duckdb"))
+)
 
 FEATURES_PATH = PROJECT_ROOT / "data" / "processed" / "clustering_features.csv"
 SCALER_PATH = PROJECT_ROOT / "data" / "processed" / "scaler.joblib"

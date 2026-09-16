@@ -448,7 +448,7 @@ docker compose config --quiet
 Construire les images :
 
 ```powershell
-docker compose build api dashboard mlflow
+docker compose build api dashboard mlflow dagster
 ```
 
 Lancer l'application :
@@ -948,7 +948,7 @@ Depuis la racine :
 
 ```powershell
 docker compose config --quiet
-docker compose build api dashboard mlflow
+docker compose build api dashboard mlflow dagster
 ```
 
 ---
@@ -1003,11 +1003,13 @@ Mlops-Project/
 │   └── CI_CD_KOMODO.md
 │
 ├── Dockerfile
+├── Dockerfile.dagster
 ├── Dockerfile.mlflow
 ├── docker-compose.yml
 ├── dvc.yaml
 ├── dvc.lock
 ├── requirements.txt
+├── requirements-dagster.txt
 └── README.md
 ```
 
@@ -1043,9 +1045,16 @@ mlflow ui --port 5000
 
 ```powershell
 docker compose config --quiet
-docker compose build api dashboard mlflow
+docker compose build api dashboard mlflow dagster
 docker compose up -d
 ```
+
+Services déployés :
+
+- Dashboard : `http://41.250.66.71:4203/`
+- API : `http://41.250.66.71:4201/`
+- MLflow : `http://41.250.66.71:4202/`
+- Dagster : `http://41.250.66.71:4204/`
 
 Vérifier les conteneurs :
 

@@ -18,7 +18,9 @@ from sklearn.metrics import (
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-DUCKDB_PATH = PROJECT_ROOT / "oulad_pipeline.duckdb"
+DUCKDB_PATH = Path(
+    os.getenv("EDUCLUSTER_DUCKDB_PATH", str(PROJECT_ROOT / "oulad_pipeline.duckdb"))
+)
 
 FEATURES_PATH = (
     PROJECT_ROOT

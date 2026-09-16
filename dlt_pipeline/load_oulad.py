@@ -1,10 +1,11 @@
 from pathlib import Path
+import os
 
 import dlt
 import pandas as pd
 
 
-DATA_DIR = Path("data/raw/oulad")
+DATA_DIR = Path(os.getenv("OULAD_DATA_DIR", "data/raw/oulad"))
 
 
 FILES = {

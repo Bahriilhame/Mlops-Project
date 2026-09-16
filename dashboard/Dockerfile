@@ -5,8 +5,10 @@ RUN npm ci
 COPY . .
 ARG VITE_API_URL=http://localhost:8002
 ARG VITE_MLFLOW_URL=http://localhost:5001
+ARG VITE_DAGSTER_URL=http://localhost:4204
 ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_MLFLOW_URL=${VITE_MLFLOW_URL}
+ENV VITE_DAGSTER_URL=${VITE_DAGSTER_URL}
 RUN npm run build
 
 FROM nginx:stable-alpine AS production

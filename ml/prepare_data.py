@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 import duckdb
 import joblib
@@ -13,9 +14,8 @@ from sklearn.preprocessing import StandardScaler
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-DUCKDB_PATH = (
-    PROJECT_ROOT
-    / "oulad_pipeline.duckdb"
+DUCKDB_PATH = Path(
+    os.getenv("EDUCLUSTER_DUCKDB_PATH", str(PROJECT_ROOT / "oulad_pipeline.duckdb"))
 )
 
 OUTPUT_DIR = PROJECT_ROOT / "data" / "processed"

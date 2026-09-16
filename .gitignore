@@ -43,6 +43,8 @@ Thumbs.db
 # MLflow
 mlruns/
 mlflow-data/
+dagster-data/
+dagster-workspace/
 
 # Python temporary files
 tmpeu8smvia/

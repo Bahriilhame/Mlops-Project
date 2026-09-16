@@ -3,6 +3,8 @@ import { toPayload } from '../data/features';
 export const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:4201').replace(/\/+$/, '');
 const configuredMlflow = import.meta.env.VITE_MLFLOW_URL || 'http://localhost:4202';
 export const MLFLOW_URL = /^https?:\/\//i.test(configuredMlflow) ? configuredMlflow : 'http://localhost:4202';
+const configuredDagster = import.meta.env.VITE_DAGSTER_URL || 'http://localhost:4204';
+export const DAGSTER_URL = /^https?:\/\//i.test(configuredDagster) ? configuredDagster : 'http://localhost:4204';
 
 export class ApiError extends Error {
   constructor(message, fieldErrors = {}) {

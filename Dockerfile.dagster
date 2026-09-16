@@ -1,0 +1,28 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+ENV DAGSTER_HOME=/opt/dagster/dagster_home \
+    GIT_PYTHON_REFRESH=quiet \
+    PYTHONUNBUFFERED=1
+
+COPY requirements-dagster.txt .
+RUN pip install --no-cache-dir -r requirements-dagster.txt
+
+COPY pipelines ./pipelines
+COPY dlt_pipeline ./dlt_pipeline
+COPY dbt ./dbt
+COPY ml ./ml
+COPY scripts ./scripts
+COPY models ./models
+COPY api/reference_results.json ./api/reference_results.json
+COPY data/processed/scaler.joblib ./data/processed/scaler.joblib
+
+RUN mkdir -p "$DAGSTER_HOME"
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=5 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3000/server_info', timeout=3)" || exit 1
+
+CMD ["dagster-webserver", "-h", "0.0.0.0", "-p", "3000", "-f", "pipelines/dagster_pipeline.py"]

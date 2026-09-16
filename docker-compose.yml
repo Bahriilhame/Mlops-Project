@@ -65,6 +65,29 @@ services:
       - "4202:5000"
     restart: unless-stopped
 
+  dagster:
+    build:
+      context: .
+      dockerfile: Dockerfile.dagster
+    container_name: educluster-dagster
+    environment:
+      DAGSTER_HOME: /opt/dagster/dagster_home
+      DAGSTER_DISABLE_TELEMETRY: "1"
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      EDUCLUSTER_DUCKDB_PATH: /app/runtime/oulad_pipeline.duckdb
+      DESTINATION__DUCKDB__CREDENTIALS: /app/runtime/oulad_pipeline.duckdb
+      OULAD_DATA_DIR: /app/data/raw/oulad
+    volumes:
+      - ./dagster-data:/opt/dagster/dagster_home
+      - ./dagster-workspace:/app/runtime
+      - ./data/raw:/app/data/raw:ro
+    ports:
+      - "${DAGSTER_PORT:-4204}:3000"
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    restart: unless-stopped
+
   dashboard:
     build:
       context: ./dashboard
@@ -72,6 +95,7 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL:-http://41.250.66.71:4201}
         VITE_MLFLOW_URL: ${VITE_MLFLOW_URL:-http://41.250.66.71:4202}
+        VITE_DAGSTER_URL: ${VITE_DAGSTER_URL:-http://41.250.66.71:4204}
     ports:
       - "${DASHBOARD_PORT:-4203}:80"
     depends_on:

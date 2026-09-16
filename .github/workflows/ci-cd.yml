@@ -52,13 +52,13 @@ jobs:
       - run: npm run build
 
   images:
-    name: Validate Compose and build all three images
+    name: Validate Compose and build all four images
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - run: docker compose config --quiet
-      - run: docker compose build api dashboard mlflow
+      - run: docker compose build api dashboard mlflow dagster
 
   deploy:
     name: Trigger existing Komodo stack
@@ -92,13 +92,14 @@ jobs:
           KOMODO_WEBHOOK_URL: ${{ secrets.KOMODO_WEBHOOK_URL }}
           KOMODO_WEBHOOK_SECRET: ${{ secrets.KOMODO_WEBHOOK_SECRET }}
         run: python scripts/trigger_komodo.py
-      - name: Verify deployed API and dashboard
+      - name: Verify deployed API, dashboard, and Dagster
         if: steps.current.outputs.deploy == 'true'
         shell: bash
         run: |
           for attempt in $(seq 1 144); do
             if curl --fail --silent --max-time 5 http://41.250.66.71:4201/health | grep -q 'model_version' \
-              && curl --fail --silent --max-time 5 http://41.250.66.71:4203/ >/dev/null; then
+              && curl --fail --silent --max-time 5 http://41.250.66.71:4203/ >/dev/null \
+              && curl --fail --silent --max-time 5 http://41.250.66.71:4204/server_info >/dev/null; then
               echo 'Deployment is healthy.' >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi

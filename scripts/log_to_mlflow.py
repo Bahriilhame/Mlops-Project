@@ -9,6 +9,7 @@ Usage:
 """
 from pathlib import Path
 import json
+import os
 import sys
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -34,6 +35,8 @@ def main(tracking_uri_override=None):
         tracking_uri = tracking_uri_override
     elif len(sys.argv) > 1:
         tracking_uri = sys.argv[1]
+    elif os.getenv("MLFLOW_TRACKING_URI"):
+        tracking_uri = os.environ["MLFLOW_TRACKING_URI"]
     else:
         DEFAULT_MLRUNS.mkdir(exist_ok=True)
         tracking_uri = DEFAULT_MLRUNS.resolve().as_uri()
