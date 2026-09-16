@@ -15,7 +15,7 @@ from scripts.log_to_mlflow import main as log_bundle
 
 PORT = os.getenv("MLFLOW_PORT", "5000")
 URI = f"http://127.0.0.1:{PORT}"
-DATA_DIR = Path(os.getenv("MLFLOW_DATA_DIR", "/mlflow/data"))
+DATA_DIR = Path(os.getenv("MLFLOW_DATA_DIR", "/mlflow-store"))
 
 
 def wait_until_ready(process, timeout=60):

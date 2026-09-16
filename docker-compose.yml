@@ -57,8 +57,10 @@ services:
       context: .
       dockerfile: Dockerfile.mlflow
     container_name: educluster-mlflow
+    environment:
+      MLFLOW_DATA_DIR: /mlflow-store
     volumes:
-      - ./mlflow-data:/mlflow/data
+      - ./mlflow-data:/mlflow-store
     ports:
       - "4202:5000"
     restart: unless-stopped
