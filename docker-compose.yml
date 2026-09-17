@@ -44,7 +44,7 @@ services:
       dockerfile: Dockerfile
     container_name: educluster-api
     environment:
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://41.250.66.71:4203,http://localhost:4203}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://41.250.65.128:4203,http://localhost:4203}
     ports:
       - "4201:8000"
     depends_on:
@@ -127,9 +127,9 @@ services:
       context: ./dashboard
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://41.250.66.71:4201}
-        VITE_MLFLOW_URL: ${VITE_MLFLOW_URL:-http://41.250.66.71:4202}
-        VITE_DAGSTER_URL: ${VITE_DAGSTER_URL:-http://41.250.66.71:4204}
+        VITE_API_URL: ${VITE_API_URL:-http://41.250.65.128:4201}
+        VITE_MLFLOW_URL: ${VITE_MLFLOW_URL:-http://41.250.65.128:4202}
+        VITE_DAGSTER_URL: ${VITE_DAGSTER_URL:-http://41.250.65.128:4204}
     ports:
       - "${DASHBOARD_PORT:-4203}:80"
     depends_on:

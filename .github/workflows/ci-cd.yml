@@ -111,9 +111,9 @@ jobs:
         shell: bash
         run: |
           for attempt in $(seq 1 144); do
-            if curl --fail --silent --max-time 5 http://41.250.66.71:4201/health | grep -q 'model_version' \
-              && curl --fail --silent --max-time 5 http://41.250.66.71:4203/ >/dev/null \
-              && curl --fail --silent --max-time 5 http://41.250.66.71:4204/server_info >/dev/null; then
+            if curl --fail --silent --max-time 5 http://41.250.65.128:4201/health | grep -q 'model_version' \
+              && curl --fail --silent --max-time 5 http://41.250.65.128:4203/ >/dev/null \
+              && curl --fail --silent --max-time 5 http://41.250.65.128:4204/server_info >/dev/null; then
               echo 'Deployment is healthy.' >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
