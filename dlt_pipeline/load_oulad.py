@@ -27,7 +27,9 @@ def load_csv(filename: str):
             f"OULAD file not found: {path}"
         )
 
-    return pd.read_csv(path)
+    # Bound ingestion memory, including the large studentVle event table.
+    with pd.read_csv(path, chunksize=10_000) as chunks:
+        yield from chunks
 
 
 @dlt.resource(
@@ -35,7 +37,7 @@ def load_csv(filename: str):
     write_disposition="replace",
 )
 def student_info():
-    yield load_csv(FILES["student_info"])
+    yield from load_csv(FILES["student_info"])
 
 
 @dlt.resource(
@@ -43,7 +45,7 @@ def student_info():
     write_disposition="replace",
 )
 def student_assessment():
-    yield load_csv(FILES["student_assessment"])
+    yield from load_csv(FILES["student_assessment"])
 
 
 @dlt.resource(
@@ -51,7 +53,7 @@ def student_assessment():
     write_disposition="replace",
 )
 def student_vle():
-    yield load_csv(FILES["student_vle"])
+    yield from load_csv(FILES["student_vle"])
 
 
 @dlt.resource(
@@ -59,7 +61,7 @@ def student_vle():
     write_disposition="replace",
 )
 def student_registration():
-    yield load_csv(FILES["student_registration"])
+    yield from load_csv(FILES["student_registration"])
 
 
 @dlt.resource(
@@ -67,7 +69,7 @@ def student_registration():
     write_disposition="replace",
 )
 def assessments():
-    yield load_csv(FILES["assessments"])
+    yield from load_csv(FILES["assessments"])
 
 
 @dlt.resource(
@@ -75,7 +77,7 @@ def assessments():
     write_disposition="replace",
 )
 def courses():
-    yield load_csv(FILES["courses"])
+    yield from load_csv(FILES["courses"])
 
 
 @dlt.resource(
@@ -83,7 +85,7 @@ def courses():
     write_disposition="replace",
 )
 def vle():
-    yield load_csv(FILES["vle"])
+    yield from load_csv(FILES["vle"])
 
 
 def main():

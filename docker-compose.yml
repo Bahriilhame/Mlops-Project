@@ -70,19 +70,53 @@ services:
       context: .
       dockerfile: Dockerfile.dagster
     container_name: educluster-dagster
-    environment:
+    cpus: "0.5"
+    mem_limit: 512m
+    memswap_limit: 512m
+    environment: &dagster-environment
       DAGSTER_HOME: /opt/dagster/dagster_home
       DAGSTER_DISABLE_TELEMETRY: "1"
       MLFLOW_TRACKING_URI: http://mlflow:5000
       EDUCLUSTER_DUCKDB_PATH: /app/runtime/oulad_pipeline.duckdb
       DESTINATION__DUCKDB__CREDENTIALS: /app/runtime/oulad_pipeline.duckdb
       OULAD_DATA_DIR: /app/data/raw/oulad
-    volumes:
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+      SKLEARN_WORKING_MEMORY: "64"
+      EXTRACT__WORKERS: "1"
+      NORMALIZE__WORKERS: "1"
+      LOAD__WORKERS: "1"
+    volumes: &dagster-volumes
       - ./dagster-data:/opt/dagster/dagster_home
       - ./dagster-workspace:/app/runtime
       - ./data/raw:/app/data/raw:ro
+      - ./deploy/dagster.yaml:/opt/dagster/dagster_home/dagster.yaml:ro
     ports:
       - "${DAGSTER_PORT:-4204}:3000"
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    restart: unless-stopped
+
+  dagster-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dagster
+    command: ["dagster-daemon", "run", "-f", "pipelines/dagster_pipeline.py"]
+    cpus: "${TRAINING_CPUS:-1.0}"
+    mem_limit: ${TRAINING_MEMORY:-1536m}
+    memswap_limit: ${TRAINING_MEMORY:-1536m}
+    environment: *dagster-environment
+    volumes: *dagster-volumes
+    init: true
+    healthcheck:
+      test: ["CMD", "dagster-daemon", "liveness-check"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
     depends_on:
       mlflow:
         condition: service_healthy

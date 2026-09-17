@@ -1,0 +1,8 @@
+# The daemon launches runs in its own resource-limited container.
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    max_concurrent_runs: 1
+telemetry:
+  enabled: false

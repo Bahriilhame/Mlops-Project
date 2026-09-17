@@ -7,6 +7,7 @@ import subprocess
 import duckdb
 import joblib
 import pandas as pd
+from sklearn import config_context
 
 from sklearn.cluster import KMeans
 from sklearn.metrics import (
@@ -206,7 +207,9 @@ def main():
     print()
     print("Calcul des métriques...")
 
-    silhouette = silhouette_score(X, labels)
+    # Keep the exact full-data score but use smaller pairwise-distance chunks.
+    with config_context(working_memory=64):
+        silhouette = silhouette_score(X, labels)
 
     davies_bouldin = davies_bouldin_score(
         X,

@@ -14,6 +14,9 @@ data/processed/*.csv
 !data/processed/clustered_students.csv
 
 mlruns
+mlflow-data
+dagster-data
+dagster-workspace
 dbt
 dlt_pipeline
 pipelines
