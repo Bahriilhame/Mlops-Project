@@ -65,6 +65,10 @@ node_modules/
 dashboard/dist/
 dashboard/coverage/
 
+# Generated presentation and report artifacts
+output/pdf/
+output/presentations/
+
 # Local configuration and credentials
 .env.*
 !.env.example
