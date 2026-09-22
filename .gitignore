@@ -45,6 +45,7 @@ mlruns/
 mlflow-data/
 dagster-data/
 dagster-workspace/
+*.db
 
 # Python temporary files
 tmpeu8smvia/

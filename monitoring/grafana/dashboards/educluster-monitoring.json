@@ -1,0 +1,10 @@
+{
+  "annotations":{"list":[]},"editable":false,
+  "panels":[
+    {"type":"timeseries","title":"CPU usage by container","gridPos":{"h":8,"w":12,"x":0,"y":0},"targets":[{"expr":"sum by (name) (rate(container_cpu_usage_seconds_total{name=~\".+\"}[5m]))","legendFormat":"{{name}}"}],"fieldConfig":{"defaults":{"unit":"percentunit"},"overrides":[]}},
+    {"type":"timeseries","title":"Memory usage by container","gridPos":{"h":8,"w":12,"x":12,"y":0},"targets":[{"expr":"sum by (name) (container_memory_working_set_bytes{name=~\".+\"})","legendFormat":"{{name}}"}],"fieldConfig":{"defaults":{"unit":"bytes"},"overrides":[]}},
+    {"type":"stat","title":"Running containers","gridPos":{"h":5,"w":8,"x":0,"y":8},"targets":[{"expr":"count(container_last_seen{name=~\".+\"})","legendFormat":"containers"}],"fieldConfig":{"defaults":{"unit":"short"},"overrides":[]}},
+    {"type":"timeseries","title":"Container network receive rate","gridPos":{"h":8,"w":16,"x":8,"y":8},"targets":[{"expr":"sum by (name) (rate(container_network_receive_bytes_total{name=~\".+\"}[5m]))","legendFormat":"{{name}}"}],"fieldConfig":{"defaults":{"unit":"Bps"},"overrides":[]}}
+  ],
+  "schemaVersion":39,"style":"dark","tags":["educluster","local","containers"],"templating":{"list":[]},"time":{"from":"now-30m","to":"now"},"title":"EduCluster - Local Monitoring","uid":"educluster-local","version":1
+}
